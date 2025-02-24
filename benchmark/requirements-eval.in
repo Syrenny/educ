@@ -1,0 +1,18 @@
+-r ./requirements.in
+
+# Metrics
+bert_score
+ragas
+
+# Common
+nltk
+scikit-learn
+
+# Dataset
+datasets
+arxiv
+
+# Models
+langchain-openai
+langchain-huggingface
+sentence_transformers

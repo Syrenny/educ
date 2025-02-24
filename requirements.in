@@ -1,0 +1,21 @@
+fastapi
+pydantic
+pydantic-settings
+python-dotenv
+openai
+uvicorn
+vllm
+python-multipart
+
+smolagents
+langchain
+langchain-community
+
+# Downloading models and datasets
+huggingface-hub
+
+# Retrieve
+rank_bm25
+
+# Command line interface
+typer
