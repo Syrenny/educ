@@ -1,4 +1,4 @@
--r ./requirements.in
+-r ./../requirements.in
 
 # Metrics
 bert_score

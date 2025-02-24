@@ -2,18 +2,17 @@ from dataclasses import dataclass, field
 import typing as t
 
 from ragas.metrics import (
-    faithfulness,
-    response_relevancy,
-    answer_correctness,
+    Faithfulness,
+    ResponseRelevancy,
+    AnswerCorrectness,
 )
-from ragas.metric.base import (
+from ragas.metrics.base import (
     MetricWithEmbeddings,
     MetricType,
     SingleTurnSample,
-    Callbacks
 )
 from bert_score import BERTScorer
-
+from langchain_core.callbacks import Callbacks
 
 
 @dataclass
@@ -41,10 +40,10 @@ class BertScore(MetricWithEmbeddings):
         
 
 ragas_metrics = [
-    faithfulness,
-    response_relevancy,
-    answer_correctness,
-    BertScore()
+    Faithfulness,
+    ResponseRelevancy,
+    AnswerCorrectness,
+    BertScore
 ]
 
 

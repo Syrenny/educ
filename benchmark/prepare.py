@@ -1,67 +1,64 @@
 
 from pathlib import Path
 
-import arxiv
-import pandas as pd
+from tqdm import tqdm
 from datasets import load_dataset
 from ragas import EvaluationDataset
-from huggingface_hub import hf_hub_download
+from langchain_community.retrievers import ArxivRetriever
 
-from chat_backend.settings import settings
 from benchmark.common import logger
 
 
-def prepare_qasper(entry) -> EvaluationDataset:
+def prepare_qasper(entry: dict) -> EvaluationDataset:
     extracted = []
     
-    for question, answers in zip(entry["qas"]["question"], entry["qas"]["answers"]):
-        for answer in answers["answer"]:
-            extracted.append({
-                "user_input": question,
-                "reference": answer["free_form_answer"],
-            })
+    for sample in entry["qas"]:
+        for question, answers in zip(sample["question"], sample["answers"]):
+            for answer in answers["answer"]:
+                extracted.append({
+                    "user_input": question,
+                    "reference": answer["free_form_answer"],
+                })
 
     return EvaluationDataset.from_list(extracted)
-
-
-def download_paper(paper_id, output_dir):
-    search = arxiv.Search(id_list=[paper_id])
-
-    for result in search.results():
+        
+        
+def load_articles(paper_ids: list[str], output_dir: Path) -> list[str]:
+    retriever = ArxivRetriever(
+        load_max_docs=1,
+        get_ful_documents=True,
+    )
+    result = []
+    for paper_id in tqdm(paper_ids, desc="Downloading papers"):
         pdf_path = output_dir / f"{paper_id}.pdf"
-
+        
         if pdf_path.exists():
-            return pdf_path
-
-        result.download_pdf(str(pdf_path))
-        return pdf_path
-        
-        
-def load_articles(paper_ids):
-    for paper_id in paper_ids:
-        try:
-            download_paper(paper_id)
-        except Exception as e:
-            logger.error(f"❌ Error occured when loading {paper_id}: {e}")
-    
-
-# Download embedding model
-hf_hub_download(
-    repo_id=settings.benchmark_embedding_model
-)
+            result.append(pdf_path.read_text())
+            continue
+        else:
+            text = retriever.invoke(paper_id)[0].page_content
+            pdf_path.write_text(text)
+            result.append(text)
+    return result
+            
     
 # Download QASPER
-_ds = load_dataset("allenai/qasper")
+_ds = load_dataset(
+    path="allenai/qasper",
+    split="train"
+)
 _paper_id = set(_ds["id"])
 
 # Prepare directory for articles
-output_dir = Path("./benchmark/arxiv_papers")
+output_dir = Path("./benchmark/data/raw/arxiv-papers")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # Parse QASPER
 qasper = prepare_qasper(_ds)
-articles = load_articles(_paper_id)
+logger.info(f"QASPER has been parsed, total length: {len(qasper.samples)}")
 
+# Load articles for indexing
+articles = load_articles(_paper_id, output_dir)
 logger.info(f"Articles have been loaded, total number: {len(articles)}")
 
 

@@ -9,6 +9,7 @@ from ragas import (
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from langchain_openai import ChatOpenAI
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.cache import SQLiteCache
 
 from benchmark.metrics import ragas_metrics
 from benchmark.prepare import qasper, articles
@@ -34,12 +35,19 @@ def inference(
     llm = ChatOpenAI(
         model=settings.llm_model_name,
         api_key=settings.llm_api_key,
-        base_url=settings.llm_api_base
+        base_url=settings.llm_api_base,
+        # Always a good idea to use Cache
+        cache=SQLiteCache("./benchmark/openai_cache.db"),
+
+    )
+    embedder = HuggingFaceEmbeddings(
+        model_name=settings.benchmark_embedding_model,
     )
     rag = BaseRAG.get(
         config_type,
         documents=articles,
-        llm=llm
+        llm=llm,
+        embedder=embedder
     )
     result = []
     for sample in dataset.samples:
@@ -57,22 +65,23 @@ def inference(
         
 
 @app.command()
-def evaluate(config_type: ConfigType):
+def evaluate(config: ConfigType):
     """App for evaluating selected qa-system configuration."""
-    typer.echo(f"Evaluating {config_type}")
+    typer.echo(f"Evaluating {config}")
     
     eval_llm = LangchainEmbeddingsWrapper(ChatOpenAI(
         model=settings.benchmark_llm_model_name,
         api_key=settings.benchmark_llm_api_key,
-        base_url=settings.benchmark_llm_api_base
+        base_url=settings.benchmark_llm_api_base,
+        cache=SQLiteCache("./benchmark/openai_cache.db"),
     ))
     
     eval_embedder = LangchainEmbeddingsWrapper(HuggingFaceEmbeddings(
-        model_name=settings.benchmark_embedder_model_name
+        model_name=settings.benchmark_embedding_model
     ))
     
     # Inference questions to generate predictions and retrieve context
-    dataset = inference(config_type, qasper)
+    dataset = inference(config, qasper)
     
     result = ragas_evaluate(
         dataset,

@@ -54,7 +54,7 @@ class Asphodel:
 
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('run.log'),
@@ -63,4 +63,3 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-logger.info("Главная программа запущена")

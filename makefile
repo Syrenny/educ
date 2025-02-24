@@ -25,5 +25,5 @@ benchmark-update:
 
 
 # Run benchmark
-benchmark: benchmark-prepare
-	uv run -m benchmark.evaluate --config-type llm
+benchmark: benchmark-update
+	uv run -m benchmark.evaluate llm

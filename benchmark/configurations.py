@@ -4,10 +4,10 @@ import nltk
 import numpy as np
 from tqdm import tqdm
 from rank_bm25 import BM25Okapi
-from smolagents import tool, ToolCallingAgent
-from sentence_transformers import SentenceTransformer
+from smolagents import Tool, ToolCallingAgent
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_core.language_models.llms import LLM as LangchainLLM
+from langchain_core.embeddings.embeddings import Embeddings as LangchainEmbeddings
 
 from benchmark.common import Asphodel
 from chat_backend.settings import settings
@@ -17,9 +17,14 @@ from chat_backend.agents import llm as smolagents_llm
 class BaseRAG(ABC, Asphodel):
     prompt_template = ""
 
-    def __init__(self, documents: list[str], llm: LangchainLLM):
+    def __init__(self, 
+                 documents: list[str], 
+                 llm: LangchainLLM,
+                 embedder: LangchainEmbeddings
+                 ):
         self.documents = documents
         self.llm = llm
+        self.embedder = embedder
         
     @abstractmethod
     def __call__(self, query: str) -> dict:
@@ -32,9 +37,12 @@ class JustLLM(BaseRAG):
     Ты — эксперт в области научных исследований. Ответь на следующий вопрос по научной теме,
     Вопрос: {query}
     """
-
-    def __init__(self, documents: list[str], llm: LangchainLLM):
-        super().__init__(documents, llm)
+    def __init__(self, 
+                 documents: list[str], 
+                 llm: LangchainLLM,
+                 embedder: LangchainEmbeddings
+                 ):
+        super().__init__(documents, llm, embedder)
     
     def __call__(self, query: str) -> dict:
         return self.llm.invoke(self.prompt_template.format(query=query))
@@ -51,6 +59,7 @@ class DefaultRAG(BaseRAG):
     def __init__(self, 
                  documents: list[str], 
                  llm: LangchainLLM,
+                 embedder: LangchainEmbeddings,
                  num_retrieved: int = 15,
                  num_reranked: int = 3,
                  chunking_threshold: float = 0.8
@@ -59,15 +68,13 @@ class DefaultRAG(BaseRAG):
             chunk) for chunk in self._semantic_chunking(documents, chunking_threshold)]
         
         self.index = self._index_chunks(documents)
-        
-        self.embedder = SentenceTransformer()
-        
-        self.docs_embeddings = self.embedder.encode(documents)
+                
+        self.docs_embeddings = self.embedder.embed_documents(documents)
         
         self.num_retrieved = num_retrieved
         self.num_reranked = num_reranked
         
-        super().__init__(documents, llm)  
+        super().__init__(documents, llm, embedder)  
     
     # source: https://github.com/xbeat/Machine-Learning/blob/main/5%20Text%20Chunking%20Strategies%20for%20RAG.md
     def _semantic_chunking(self, 
@@ -76,16 +83,11 @@ class DefaultRAG(BaseRAG):
                            ) -> list[str]:
         chunks = []
         for document in tqdm(documents, description="Chunking documents"):
-            # Initialize transformer model
-            model = SentenceTransformer(
-                settings.benchmark_embedding_model
-            )
-
             # Split into sentences
             sentences = nltk.sent_tokenize(document)
 
             # Get embeddings
-            embeddings = model.encode(sentences)
+            embeddings = self.embedder.embed_documents(sentences)
 
             # Initialize chunks
             chunks = []
@@ -164,43 +166,54 @@ class DefaultRAG(BaseRAG):
         return self._generate(query, reranked), reranked
         
         
-        
+class RetrieverTool(Tool):
+    name = "retriever"
+    description = "Uses semantic search to retrieve the parts of transformers documentation that could be most relevant to answer your query."
+    inputs = {
+        "query": {
+            "type": "string",
+            "description": "The query to perform. This should be semantically close to your target documents. Use the affirmative form rather than a question.",
+        }
+    }
+    output_type = "string"
+
+    def __init__(self, rag: BaseRAG, **kwargs):
+        super().__init__(**kwargs)
+        self.rag = rag
+
+    def forward(self, query: str) -> str:
+        assert isinstance(query, str), "Your search query must be a string"
+
+        docs = self.rag.retrieve(
+            query,
+        )
+        return "\nRetrieved documents:\n" + "".join(
+            [
+                f"\n\n===== Document {str(i)} =====\n" + doc.page_content
+                for i, doc in enumerate(docs)
+            ]
+        )
+
 
 @BaseRAG.register("agentic-rag")
 class AgenticRAG(BaseRAG):
-    prompt_template = """
-    Ты — эксперт в области научных исследований. Ответь на следующий вопрос по научной теме,
-    используя предоставленные документы.
-    Вопрос: {query}
-    Документы: {documents}
-    """
     def __init__(self, 
                  documents: list[str], 
-                 llm: LangchainLLM
+                 llm: LangchainLLM,
+                 embedder: LangchainEmbeddings,
                  ):
-        super().__init__(documents, llm)
-        self.rag = BaseRAG.get(
+        super().__init__(documents, llm, embedder)
+        rag = BaseRAG.get(
             "default-rag",
             documents=documents,
-            llm=llm
+            llm=llm,
+            embedder=embedder
         )
+        retriever_tool = RetrieverTool(rag=rag)
         self.agent = ToolCallingAgent(
-            tools=[self.retrieve],
+            tools=[retriever_tool],
             model=smolagents_llm
         )
-        
-    @tool
-    def retrieve(self, query: str) -> list[str]:
-        """
-        Uses semantic search to retrieve the parts of documents that are most relevant to the query.
-
-        Args:
-            query (str): Query of the user.
-
-        Returns:
-            list[str]: List of retrieved relevant documents.
-        """
-        return self.rag.retrieve(query)
         
     def __call__(self, 
                  query: str
