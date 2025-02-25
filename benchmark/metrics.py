@@ -7,43 +7,51 @@ from ragas.metrics import (
     AnswerCorrectness,
 )
 from ragas.metrics.base import (
-    MetricWithEmbeddings,
+    Metric,
+    SingleTurnMetric,
     MetricType,
     SingleTurnSample,
 )
+from ragas.run_config import RunConfig
 from bert_score import BERTScorer
 from langchain_core.callbacks import Callbacks
 
 
 @dataclass
-class BertScore(MetricWithEmbeddings):
+class BertScore(SingleTurnMetric):
     name: str = "bert_score"
     _required_columns: t.Dict[MetricType, t.Set[str]] = field(
         default_factory=lambda: {
-            MetricType.SINGLE_TURN: {"reference", "response"}
+            MetricType.SINGLE_TURN: {
+                "reference", 
+                "response"
+            }
         }
     )
     
-    def single_turn_score(
+    def init(self, run_config: RunConfig):
+        self.bert_scorer = BERTScorer(
+            lang="ru",
+            device="cuda"
+        )
+
+        
+    async def _single_turn_ascore(
         self,
         sample: SingleTurnSample,
         callbacks: Callbacks = None,
     ) -> float:
-        bert_scorer = BERTScorer(
-            lang="ru",
-            device="cuda"
-        )
-        return float(bert_scorer.score(
-            cands=list(sample.response),
-            refs=list(sample.reference)
+        return float(self.bert_scorer.score(
+            cands=sample.response,
+            refs=sample.reference
         )[-1].mean())
         
 
 ragas_metrics = [
-    Faithfulness,
-    ResponseRelevancy,
-    AnswerCorrectness,
-    BertScore
+    # Faithfulness(),
+    # ResponseRelevancy(),
+    AnswerCorrectness(),
+    # BertScore()
 ]
 
 

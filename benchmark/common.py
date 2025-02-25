@@ -50,7 +50,7 @@ class Asphodel:
         registry = cls._registry.get(cls, {})
         if class_name not in registry:
             raise ValueError(f"Class named '{class_name}' not found.")
-        return registry[class_name](class_name, *args, **kwargs)
+        return registry[class_name](*args, **kwargs)
 
 
 logging.basicConfig(
@@ -61,5 +61,8 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)

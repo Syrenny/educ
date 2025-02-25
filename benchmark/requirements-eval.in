@@ -5,7 +5,7 @@ bert_score
 ragas
 
 # Common
-nltk
+spacy
 scikit-learn
 
 # Dataset
@@ -15,4 +15,9 @@ arxiv
 # Models
 langchain-openai
 langchain-huggingface
+langchain-core>=0.2.24
 sentence_transformers
+langchain-together
+
+# Tokenizing
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

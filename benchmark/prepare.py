@@ -1,4 +1,4 @@
-
+import random
 from pathlib import Path
 
 from tqdm import tqdm
@@ -7,9 +7,10 @@ from ragas import EvaluationDataset
 from langchain_community.retrievers import ArxivRetriever
 
 from benchmark.common import logger
+from chat_backend.settings import settings
 
 
-def prepare_qasper(entry: dict) -> EvaluationDataset:
+def prepare_qasper(entry: dict, n: int) -> EvaluationDataset:
     extracted = []
     
     for sample in entry["qas"]:
@@ -20,7 +21,7 @@ def prepare_qasper(entry: dict) -> EvaluationDataset:
                     "reference": answer["free_form_answer"],
                 })
 
-    return EvaluationDataset.from_list(extracted)
+    return EvaluationDataset.from_list(random.sample(extracted, n))
         
         
 def load_articles(paper_ids: list[str], output_dir: Path) -> list[str]:
@@ -45,7 +46,7 @@ def load_articles(paper_ids: list[str], output_dir: Path) -> list[str]:
 # Download QASPER
 _ds = load_dataset(
     path="allenai/qasper",
-    split="train"
+    split="validation"
 )
 _paper_id = set(_ds["id"])
 
@@ -53,9 +54,9 @@ _paper_id = set(_ds["id"])
 output_dir = Path("./benchmark/data/raw/arxiv-papers")
 output_dir.mkdir(parents=True, exist_ok=True)
 
-# Parse QASPER
-qasper = prepare_qasper(_ds)
-logger.info(f"QASPER has been parsed, total length: {len(qasper.samples)}")
+# Parse QASPER and get N samples for benchmarking
+qasper = prepare_qasper(_ds, settings.benchmark_n_samples)
+logger.info(f"QASPER has been parsed, got {settings.benchmark_n_samples} samples for testing")
 
 # Load articles for indexing
 articles = load_articles(_paper_id, output_dir)

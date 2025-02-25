@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-import nltk
+import spacy
 import numpy as np
 from tqdm import tqdm
 from rank_bm25 import BM25Okapi
@@ -27,7 +27,7 @@ class BaseRAG(ABC, Asphodel):
         self.embedder = embedder
         
     @abstractmethod
-    def __call__(self, query: str) -> dict:
+    def __call__(self, query: str) -> tuple[str, list[str]]:
         ...
         
         
@@ -44,8 +44,8 @@ class JustLLM(BaseRAG):
                  ):
         super().__init__(documents, llm, embedder)
     
-    def __call__(self, query: str) -> dict:
-        return self.llm.invoke(self.prompt_template.format(query=query))
+    def __call__(self, query: str) -> tuple[str, list[str]]:
+        return self.llm.invoke(self.prompt_template.format(query=query)).content, [""]
     
     
 @BaseRAG.register("default-rag")
@@ -64,10 +64,18 @@ class DefaultRAG(BaseRAG):
                  num_reranked: int = 3,
                  chunking_threshold: float = 0.8
                  ):
-        self.chunks = [self._preprocess_chunk(
-            chunk) for chunk in self._semantic_chunking(documents, chunking_threshold)]
         
-        self.index = self._index_chunks(documents)
+        self.nlp = spacy.load("en_core_web_sm")
+        self.embedder = embedder
+        
+        self.chunks = [
+            self._preprocess_chunk(chunk) for chunk in self._semantic_chunking(
+                documents, 
+                chunking_threshold
+            )
+        ]
+        
+        self.index = self._index_chunks(self.chunks)
                 
         self.docs_embeddings = self.embedder.embed_documents(documents)
         
@@ -82,15 +90,13 @@ class DefaultRAG(BaseRAG):
                            similarity_threshold: float = 0.8
                            ) -> list[str]:
         chunks = []
-        for document in tqdm(documents, description="Chunking documents"):
+        for document in tqdm(documents, desc="Chunking documents"):
             # Split into sentences
-            sentences = nltk.sent_tokenize(document)
-
+            sentences = [sent.text for sent in self.nlp(document).sents]
+            
             # Get embeddings
-            embeddings = self.embedder.embed_documents(sentences)
-
-            # Initialize chunks
-            chunks = []
+            embeddings = np.array(self.embedder.embed_documents(sentences))
+            
             current_chunk = [sentences[0]]
             current_embedding = embeddings[0].reshape(1, -1)
 
@@ -103,7 +109,7 @@ class DefaultRAG(BaseRAG):
                 if similarity >= similarity_threshold:
                     current_chunk.append(sentences[i])
                     current_embedding = np.mean(
-                        [embeddings[i], current_embedding], axis=0)
+                        [embeddings[i].reshape(1, -1), current_embedding], axis=0)
                 else:
                     chunks.append(' '.join(current_chunk))
                     current_chunk = [sentences[i]]
@@ -128,16 +134,18 @@ class DefaultRAG(BaseRAG):
                   ) -> list[str]:
         scores = self.index.get_scores(query)
         top_n = scores.argsort()[-self.num_retrieved:][::-1]
-        
+        print(len(scores))
+        print(len(top_n))
+        print(len(chunks))
         return [chunks[i] for i in top_n]
 
     def _rerank(self, 
                 query: str, 
                 chunks: list[str]
                 ) -> list[str]:
-        query_embedding = self.embedder.encode([query])
+        query_embedding = self.embedder.embed_documents([query])
         similarities = cosine_similarity(
-            query_embedding, self.doc_embeddings)[0]
+            query_embedding, self.docs_embeddings)[0]
 
         return [doc for _, doc in sorted(
             zip(similarities, chunks), reverse=True)][:self.num_reranked]
@@ -151,7 +159,7 @@ class DefaultRAG(BaseRAG):
                 query=query, 
                 documents='\n'.join(context)
             )
-        )
+        ).content
         
     def retrieve(self, query: str) -> list[str]:
         retrieved = self._retrieve(query, self.chunks)
@@ -168,7 +176,8 @@ class DefaultRAG(BaseRAG):
         
 class RetrieverTool(Tool):
     name = "retriever"
-    description = "Uses semantic search to retrieve the parts of transformers documentation that could be most relevant to answer your query."
+    description = """
+    Uses semantic search to retrieve the parts of transformers documentation that could be most relevant to answer your query."""
     inputs = {
         "query": {
             "type": "string",
@@ -189,7 +198,7 @@ class RetrieverTool(Tool):
         )
         return "\nRetrieved documents:\n" + "".join(
             [
-                f"\n\n===== Document {str(i)} =====\n" + doc.page_content
+                f"\n\n===== Document {str(i)} =====\n" + doc
                 for i, doc in enumerate(docs)
             ]
         )
@@ -204,7 +213,7 @@ class AgenticRAG(BaseRAG):
                  ):
         super().__init__(documents, llm, embedder)
         rag = BaseRAG.get(
-            "default-rag",
+            class_name="default-rag",
             documents=documents,
             llm=llm,
             embedder=embedder
@@ -212,10 +221,12 @@ class AgenticRAG(BaseRAG):
         retriever_tool = RetrieverTool(rag=rag)
         self.agent = ToolCallingAgent(
             tools=[retriever_tool],
-            model=smolagents_llm
+            model=smolagents_llm,
+            name="Agentic RAG",
+            description="Agentic RAG is a system, where LLM can decide whether to use retriever or not."
         )
         
     def __call__(self, 
                  query: str
                  ) -> tuple[str, list[str]]:
-        self.agents.run(query), ""
+        return self.agent.run(query), [""]

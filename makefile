@@ -26,4 +26,4 @@ benchmark-update:
 
 # Run benchmark
 benchmark: benchmark-update
-	uv run -m benchmark.evaluate llm
+	uv run -m benchmark.evaluate agentic-rag
