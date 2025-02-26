@@ -29,5 +29,5 @@ dataset:
 
 # Run benchmark
 benchmark: benchmark-update
-	uv run -m benchmark.evaluate --config agentic-rag --benchmark frames
+	uv run -m benchmark.evaluate --config llm --benchmark frames
 

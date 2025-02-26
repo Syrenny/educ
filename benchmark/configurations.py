@@ -233,9 +233,17 @@ class AgenticRAG(BaseRAG):
             description="Agentic RAG is a system, where LLM can decide whether to use retriever or not."
         )
         
+    # TODO: add extracting context from exact retriever-tool call
     def __call__(self, 
                  query: str
                  ) -> tuple[str, list[str]]:
-        result = self.agent.run(query)
-        print(type(result))
-        return result, [""]
+        context = [""]
+        # source: https://github.com/huggingface/smolagents/blob/main/src/smolagents/gradio_ui.py
+        for step_log in self.agent.run(query, stream=True):
+            if hasattr(step_log, "observations") and (
+                step_log.observations is not None and step_log.observations.strip()
+            ):
+                context[0] = step_log.observations
+        
+        return step_log, context
+    
