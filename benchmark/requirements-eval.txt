@@ -36,7 +36,9 @@ attrs==25.1.0
     #   jsonschema
     #   referencing
 beautifulsoup4==4.13.3
-    # via markdownify
+    # via
+    #   markdownify
+    #   wikipedia
 bert-score==0.3.13
     # via -r ./benchmark/requirements-eval.in
 blake3==1.0.4
@@ -268,7 +270,9 @@ marisa-trie==1.2.1
 markdown-it-py==3.0.0
     # via rich
 markdownify==0.14.1
-    # via smolagents
+    # via
+    #   -r ./benchmark/requirements-eval.in
+    #   smolagents
 markupsafe==3.0.2
     # via jinja2
 marshmallow==3.26.1
@@ -538,6 +542,7 @@ requests==2.32.3
     #   transformers
     #   vllm
     #   weasel
+    #   wikipedia
 requests-toolbelt==1.0.0
     # via langsmith
 rich==13.9.4
@@ -727,6 +732,8 @@ weasel==0.4.1
     # via spacy
 websockets==15.0
     # via uvicorn
+wikipedia==1.4.0
+    # via -r ./benchmark/requirements-eval.in
 wrapt==1.17.2
     # via smart-open
 xformers==0.0.28.post3

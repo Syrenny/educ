@@ -11,6 +11,8 @@ scikit-learn
 # Dataset
 datasets
 arxiv
+wikipedia
+markdownify
 
 # Models
 langchain-openai

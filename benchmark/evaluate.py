@@ -17,7 +17,7 @@ from langchain_core.outputs import LLMResult, ChatGeneration
 
 
 from benchmark.metrics import ragas_metrics
-from benchmark.prepare import qasper, articles
+from benchmark.prepare import prepare_benchmark, BenchmarkType
 from benchmark.configurations import BaseRAG
 from benchmark.common import logger
 from chat_backend.settings import settings
@@ -56,6 +56,12 @@ together_rate_limiter = InMemoryRateLimiter(
     max_bucket_size=1,
 )
 
+vsegpt_rate_limiter = InMemoryRateLimiter(
+    requests_per_second=1,
+    check_every_n_seconds=1,
+    max_bucket_size=1,
+)
+
 
 class ConfigType(str, Enum):
     """Enum for configuration types."""
@@ -65,22 +71,27 @@ class ConfigType(str, Enum):
 
 
 def inference(
-    config_type: ConfigType, 
-    dataset: EvaluationDataset
-    ) -> EvaluationDataset:
+    config: ConfigType, 
+    dataset: EvaluationDataset,
+    articles: list[str],
+    ) -> EvaluationDataset:    
+    
     llm = ChatOpenAI(
         model=settings.llm_model_name,
         api_key=settings.llm_api_key,
         base_url=settings.llm_api_base,
         # Always a good idea to use Cache
-        cache=SQLiteCache("./benchmark/openai_cache.db"),
-        rate_limiter=together_rate_limiter,
+        cache=SQLiteCache("./benchmark/data/cache/openai_cache.db"),
+        rate_limiter=vsegpt_rate_limiter,
     )
     embedder = HuggingFaceEmbeddings(
         model_name=settings.benchmark_embedding_model,
+        encode_kwargs={
+            "batch_size": 32
+        }
     )
     rag = BaseRAG.get(
-        class_name=config_type,
+        class_name=config,
         documents=articles,
         llm=llm,
         embedder=embedder
@@ -96,36 +107,49 @@ def inference(
                 "reference": sample.reference
             }
         )
+    del embedder, llm
+        
     return EvaluationDataset.from_list(result)
     
         
 
 @app.command()
-def evaluate(config: ConfigType):
+def evaluate(
+    config: ConfigType = typer.Option("--config"),
+    benchmark: BenchmarkType = typer.Option("--benchmark")
+    ):
     """App for evaluating selected qa-system configuration."""
-    typer.echo(f"Evaluating {config}")
     
-    # eval_llm = ChatOpenAI(
-    #     model=settings.benchmark_llm_model_name,
-    #     api_key=settings.benchmark_llm_api_key,
-    #     base_url=settings.benchmark_llm_api_base,
-    #     cache=SQLiteCache("./benchmark/openai_cache.db"),
-    #     rate_limiter=together_rate_limiter,
-    # )
+    # Preparing dataset
+    dataset, articles = prepare_benchmark(benchmark)
     
-    eval_llm = ChatTogether(
-        model=settings.benchmark_llm_model_name,
-        api_key=settings.benchmark_llm_api_key,
-        cache=SQLiteCache("./benchmark/openai_cache.db"),
-        rate_limiter=together_rate_limiter,
+    typer.echo(f"Evaluating {config}, {benchmark}")
+        
+    # Inference questions to generate predictions and retrieve context
+    dataset = inference(
+        config=config, 
+        dataset=dataset,
+        articles=articles
     )
     
     eval_embedder = HuggingFaceEmbeddings(
         model_name=settings.benchmark_embedding_model
     )
     
-    # Inference questions to generate predictions and retrieve context
-    dataset = inference(config, qasper)
+    # eval_llm = ChatTogether(
+    #     model=settings.benchmark_llm_model_name,
+    #     api_key=settings.benchmark_llm_api_key,
+    #     cache=SQLiteCache("./benchmark/data/cache/openai_cache.db"),
+    #     rate_limiter=together_rate_limiter,
+    # )
+    
+    eval_llm = ChatOpenAI(
+        model=settings.benchmark_llm_model_name,
+        api_key=settings.benchmark_llm_api_key,
+        base_url=settings.benchmark_llm_api_base,
+        cache=SQLiteCache("./benchmark/data/cache/openai_cache.db"),
+        rate_limiter=vsegpt_rate_limiter,
+    )
     
     result = ragas_evaluate(
         dataset,

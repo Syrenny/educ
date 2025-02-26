@@ -1,6 +1,8 @@
+import gc
 from abc import ABC, abstractmethod
 
 import spacy
+import torch
 import numpy as np
 from tqdm import tqdm
 from rank_bm25 import BM25Okapi
@@ -74,15 +76,23 @@ class DefaultRAG(BaseRAG):
                 chunking_threshold
             )
         ]
+        self.__empty_cache()
         
         self.index = self._index_chunks(self.chunks)
                 
-        self.docs_embeddings = self.embedder.embed_documents(documents)
+        self.chunks_embedding = self.embedder.embed_documents(self.chunks)
+        
+        self.__empty_cache()
         
         self.num_retrieved = num_retrieved
         self.num_reranked = num_reranked
         
         super().__init__(documents, llm, embedder)  
+        
+    # Cause sentence_transformers or langhchain wrapper leave garbage in memory
+    def __empty_cache(self):
+        gc.collect()
+        torch.cuda.empty_cache()
     
     # source: https://github.com/xbeat/Machine-Learning/blob/main/5%20Text%20Chunking%20Strategies%20for%20RAG.md
     def _semantic_chunking(self, 
@@ -91,10 +101,8 @@ class DefaultRAG(BaseRAG):
                            ) -> list[str]:
         chunks = []
         for document in tqdm(documents, desc="Chunking documents"):
-            # Split into sentences
             sentences = [sent.text for sent in self.nlp(document).sents]
             
-            # Get embeddings
             embeddings = np.array(self.embedder.embed_documents(sentences))
             
             current_chunk = [sentences[0]]
@@ -134,9 +142,7 @@ class DefaultRAG(BaseRAG):
                   ) -> list[str]:
         scores = self.index.get_scores(query)
         top_n = scores.argsort()[-self.num_retrieved:][::-1]
-        print(len(scores))
-        print(len(top_n))
-        print(len(chunks))
+
         return [chunks[i] for i in top_n]
 
     def _rerank(self, 
@@ -145,7 +151,7 @@ class DefaultRAG(BaseRAG):
                 ) -> list[str]:
         query_embedding = self.embedder.embed_documents([query])
         similarities = cosine_similarity(
-            query_embedding, self.docs_embeddings)[0]
+            query_embedding, self.chunks_embedding)[0]
 
         return [doc for _, doc in sorted(
             zip(similarities, chunks), reverse=True)][:self.num_reranked]
@@ -163,8 +169,10 @@ class DefaultRAG(BaseRAG):
         
     def retrieve(self, query: str) -> list[str]:
         retrieved = self._retrieve(query, self.chunks)
+        reranked = self._rerank(query, retrieved)
+        self.__empty_cache()
         
-        return self._rerank(query, retrieved)
+        return reranked
                               
     def __call__(self, 
                  query: str
@@ -177,7 +185,7 @@ class DefaultRAG(BaseRAG):
 class RetrieverTool(Tool):
     name = "retriever"
     description = """
-    Uses semantic search to retrieve the parts of transformers documentation that could be most relevant to answer your query."""
+    Uses semantic search to retrieve the parts of wiki that could be most relevant to answer your query."""
     inputs = {
         "query": {
             "type": "string",

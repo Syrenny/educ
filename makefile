@@ -26,4 +26,4 @@ benchmark-update:
 
 # Run benchmark
 benchmark: benchmark-update
-	uv run -m benchmark.evaluate agentic-rag
+	uv run -m benchmark.evaluate --config agentic-rag --benchmark frames

@@ -63,6 +63,6 @@ logging.basicConfig(
 )
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("openai").setLevel(logging.WARNING)
-logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
