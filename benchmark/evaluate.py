@@ -72,7 +72,7 @@ vsegpt_rate_limiter = InMemoryRateLimiter(
 underlying_embeddings = HuggingFaceEmbeddings(
     model_name=settings.benchmark_embedding_model,
     encode_kwargs={
-        "batch_size": 32
+        "batch_size": 10
     }
 )
 

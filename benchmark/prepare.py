@@ -59,7 +59,8 @@ def _load_wiki_articles(wiki_links: list[str], output_dir: Path) -> list[str]:
                 'prop': 'extracts',
                 'titles': title,
                 'rvprop': 'content',
-                'format': 'json'
+                'format': 'json',
+                "explaintext": "true"
             }
         )
         if response.status_code != 200:
@@ -179,7 +180,7 @@ def _save_dataset(
     return _dir
     
     
-def load_dataset_from_files() -> EvaluationDataset:
+def load_dataset_from_files() -> tuple[EvaluationDataset, list[str]]:
     checkpoint = Path(settings.dataset_checkpoint)
     dataset = EvaluationDataset.from_jsonl(checkpoint / "dataset.json")
     with (checkpoint / "articles.json").open(mode="r") as file:

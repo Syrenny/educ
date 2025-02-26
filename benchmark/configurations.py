@@ -6,7 +6,7 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from rank_bm25 import BM25Okapi
-from smolagents import Tool, ToolCallingAgent
+from smolagents import Tool, ToolCallingAgent, LogLevel
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_core.language_models.llms import LLM as LangchainLLM
 from langchain_core.embeddings.embeddings import Embeddings as LangchainEmbeddings
@@ -230,7 +230,8 @@ class AgenticRAG(BaseRAG):
             tools=[retriever_tool],
             model=smolagents_llm,
             name="Agentic RAG",
-            description="Agentic RAG is a system, where LLM can decide whether to use retriever or not."
+            description="Agentic RAG is a system, where LLM can decide whether to use retriever or not.",
+            verbosity_level=LogLevel.ERROR
         )
         
     # TODO: add extracting context from exact retriever-tool call
