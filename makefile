@@ -23,7 +23,11 @@ benchmark-update:
 	uv pip compile ./benchmark/requirements-eval.in -o ./benchmark/requirements-eval.txt --quiet
 	uv pip install -r ./benchmark/requirements-eval.txt --quiet
 
+# Prepare dataset
+dataset:
+	uv run -m benchmark.prepare --dataset-type frames
 
 # Run benchmark
 benchmark: benchmark-update
 	uv run -m benchmark.evaluate --config agentic-rag --benchmark frames
+

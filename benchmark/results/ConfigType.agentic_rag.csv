@@ -1,2 +1,0 @@
-,user_input,retrieved_contexts,response,reference,answer_correctness
-0,What baseline is used?,[''],"The baseline used involves three popular transformer-based architectures: BERT, XLNet, and RoBERTa, applied on publicly available datasets such as the Bioscope Corpus and SFU Review Corpus.",,0.11083688036366654

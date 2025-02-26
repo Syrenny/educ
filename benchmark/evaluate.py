@@ -1,3 +1,5 @@
+import os
+import base64
 from enum import Enum
 
 import typer
@@ -10,17 +12,20 @@ from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from langchain_openai import ChatOpenAI
 from langchain_together import ChatTogether
+from langchain.storage import LocalFileStore
 from langchain_community.cache import SQLiteCache
+from langchain.embeddings import CacheBackedEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_core.outputs import LLMResult, ChatGeneration
 
-
 from benchmark.metrics import ragas_metrics
-from benchmark.prepare import prepare_benchmark, BenchmarkType
+from benchmark.prepare import load_dataset_from_files, BenchmarkType
 from benchmark.configurations import BaseRAG
-from benchmark.common import logger
+from benchmark.common import logger, ConfigType
 from chat_backend.settings import settings
+
+os.environ["RAGAS_APP_TOKEN"] = settings.ragas_api_key
 
 
 # As mentioned here https://github.com/explodinggradients/ragas/issues/1548 and here https://github.com/explodinggradients/ragas/pull/1728 need to realize custom is_finished funtion for LLAMA models
@@ -62,12 +67,22 @@ vsegpt_rate_limiter = InMemoryRateLimiter(
     max_bucket_size=1,
 )
 
+# Configure the embeddings model and cache
 
-class ConfigType(str, Enum):
-    """Enum for configuration types."""
-    llm = "llm"
-    default_rag = "default-rag"
-    agentic_rag = "agentic-rag"
+underlying_embeddings = HuggingFaceEmbeddings(
+    model_name=settings.benchmark_embedding_model,
+    encode_kwargs={
+        "batch_size": 32
+    }
+)
+
+store = LocalFileStore(settings.embeddings_cache_path)
+
+embedder = CacheBackedEmbeddings.from_bytes_store(
+    underlying_embeddings, 
+    store,
+    namespace=settings.benchmark_embedding_model
+)
 
 
 def inference(
@@ -84,12 +99,7 @@ def inference(
         cache=SQLiteCache("./benchmark/data/cache/openai_cache.db"),
         rate_limiter=vsegpt_rate_limiter,
     )
-    embedder = HuggingFaceEmbeddings(
-        model_name=settings.benchmark_embedding_model,
-        encode_kwargs={
-            "batch_size": 32
-        }
-    )
+    
     rag = BaseRAG.get(
         class_name=config,
         documents=articles,
@@ -107,7 +117,7 @@ def inference(
                 "reference": sample.reference
             }
         )
-    del embedder, llm
+    del llm
         
     return EvaluationDataset.from_list(result)
     
@@ -121,7 +131,7 @@ def evaluate(
     """App for evaluating selected qa-system configuration."""
     
     # Preparing dataset
-    dataset, articles = prepare_benchmark(benchmark)
+    dataset, articles = load_dataset_from_files()
     
     typer.echo(f"Evaluating {config}, {benchmark}")
         
@@ -132,9 +142,8 @@ def evaluate(
         articles=articles
     )
     
-    eval_embedder = HuggingFaceEmbeddings(
-        model_name=settings.benchmark_embedding_model
-    )
+    # Save dataset for checking
+    dataset.to_jsonl("./benchmark/data/transformed/inference.jsonl")
     
     # eval_llm = ChatTogether(
     #     model=settings.benchmark_llm_model_name,
@@ -156,13 +165,13 @@ def evaluate(
         metrics=ragas_metrics,
         llm=LangchainLLMWrapper(
             eval_llm, 
-            is_finished_parser=llama_is_finished_parser
+            # is_finished_parser=llama_is_finished_parser
         ),
-        embeddings=LangchainEmbeddingsWrapper(eval_embedder),
+        embeddings=LangchainEmbeddingsWrapper(embedder),
         raise_exceptions=True
-    ).to_pandas()
-    
-    result.to_csv(f"./benchmark/results/{config}.csv")
+    )
+    result.upload()
+    result.to_pandas().to_csv(f"./benchmark/results/{config.name}.csv")
     typer.echo(result)
     
 

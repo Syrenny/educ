@@ -7,7 +7,6 @@ from ragas.metrics import (
     AnswerCorrectness,
 )
 from ragas.metrics.base import (
-    Metric,
     SingleTurnMetric,
     MetricType,
     SingleTurnSample,
@@ -31,7 +30,7 @@ class BertScore(SingleTurnMetric):
     
     def init(self, run_config: RunConfig):
         self.bert_scorer = BERTScorer(
-            lang="ru",
+            lang="en",
             device="cuda"
         )
 
@@ -42,16 +41,16 @@ class BertScore(SingleTurnMetric):
         callbacks: Callbacks = None,
     ) -> float:
         return float(self.bert_scorer.score(
-            cands=sample.response,
-            refs=sample.reference
-        )[-1].mean())
+            cands=[sample.response],
+            refs=[sample.reference]
+        )[-1])
         
 
 ragas_metrics = [
-    # Faithfulness(),
-    # ResponseRelevancy(),
+    Faithfulness(),
+    ResponseRelevancy(),
     AnswerCorrectness(),
-    # BertScore()
+    BertScore()
 ]
 
 

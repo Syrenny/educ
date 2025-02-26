@@ -1,7 +1,7 @@
 -r ./../requirements.in
 
 # Metrics
-bert_score
+bert-score
 ragas
 
 # Common
@@ -11,8 +11,6 @@ scikit-learn
 # Dataset
 datasets
 arxiv
-wikipedia
-markdownify
 
 # Models
 langchain-openai

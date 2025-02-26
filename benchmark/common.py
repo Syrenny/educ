@@ -1,5 +1,6 @@
-from typing import ClassVar
 import logging
+from enum import Enum
+from typing import ClassVar
 
 
 class Asphodel:
@@ -52,6 +53,13 @@ class Asphodel:
             raise ValueError(f"Class named '{class_name}' not found.")
         return registry[class_name](*args, **kwargs)
 
+
+class ConfigType(str, Enum):
+    """Enum for configuration types."""
+    llm = "llm"
+    default_rag = "default-rag"
+    agentic_rag = "agentic-rag"
+    
 
 logging.basicConfig(
     level=logging.INFO,

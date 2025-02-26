@@ -1,14 +1,17 @@
-import ast
-import random
 from enum import Enum
 from pathlib import Path
+import ast
+import json
+import string
+import random
+from datetime import datetime
 
-import numpy as np
+import typer
 from tqdm import tqdm
 from datasets import load_dataset
 from ragas import EvaluationDataset
 
-from benchmark.common import logger
+from benchmark.common import logger, ConfigType
 from chat_backend.settings import settings
 
 
@@ -112,7 +115,7 @@ def _parse_wiki_links(links: list[str]):
     return result
 
             
-def prepare_benchmark(name: BenchmarkType) -> tuple[EvaluationDataset, list[str]]:
+def _prepare_dataset(name: BenchmarkType) -> tuple[EvaluationDataset, list[str]]:
     if name == BenchmarkType.QASPER:
         # Download QASPER
         _ds = load_dataset(
@@ -150,4 +153,55 @@ def prepare_benchmark(name: BenchmarkType) -> tuple[EvaluationDataset, list[str]
             f"Articles have been loaded, total number: {len(articles)}")
         return _parse_frames(_ds, settings.benchmark_n_samples), articles
 
+    
+def _save_dataset(
+    benchmark_type: BenchmarkType,
+    dataset: EvaluationDataset, 
+    articles: list[str]
+    ) -> Path:
+    base_dir = "./benchmark/data/transformed/datasets"
 
+    # Creating unique checkpoint directory
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    random_part = ''.join(random.choices(
+        string.ascii_letters + string.digits, k=6))
+
+    _dir = Path(base_dir) / \
+        f"{benchmark_type.name}_{timestamp}_{random_part}"
+    _dir.mkdir(parents=True, exist_ok=True)
+
+    # Save dataset
+    dataset.to_jsonl(_dir / "dataset.json")
+    
+    with (_dir / "articles.json").open(mode="w") as file:
+        json.dump(articles, file, indent=4)
+    
+    return _dir
+    
+    
+def load_dataset_from_files() -> EvaluationDataset:
+    checkpoint = Path(settings.dataset_checkpoint)
+    dataset = EvaluationDataset.from_jsonl(checkpoint / "dataset.json")
+    with (checkpoint / "articles.json").open(mode="r") as file:
+        articles = json.load(file)
+        
+    logger.info(f"Dataset has been loaded from {checkpoint}")
+        
+    return dataset, articles
+    
+
+app = typer.Typer()
+
+@app.command()
+def prepare(
+    dataset_type: BenchmarkType = typer.Option("--dataset-type")
+    ):
+    """App for preparing selected dataset."""
+    dataset, articles = _prepare_dataset(dataset_type)
+
+    dataset_path = _save_dataset(dataset_type, dataset, articles)
+    logger.info(f"Benchmark has been saved to {dataset_path}")
+    
+
+if __name__ == "__main__":
+    app()

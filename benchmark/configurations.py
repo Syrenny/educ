@@ -36,8 +36,8 @@ class BaseRAG(ABC, Asphodel):
 @BaseRAG.register("llm")
 class JustLLM(BaseRAG):
     prompt_template = """
-    Ты — эксперт в области научных исследований. Ответь на следующий вопрос по научной теме,
-    Вопрос: {query}
+    You are an expert in scientific research. Answer the following question on a scientific topic.
+    Question: {query}
     """
     def __init__(self, 
                  documents: list[str], 
@@ -53,10 +53,9 @@ class JustLLM(BaseRAG):
 @BaseRAG.register("default-rag")
 class DefaultRAG(BaseRAG):
     prompt_template = """
-    Ты — эксперт в области научных исследований. Ответь на следующий вопрос по научной теме,
-    используя предоставленные документы.
-    Вопрос: {query}
-    Документы: {documents}
+    You are an expert in scientific research. Answer the following question on a scientific topic using the provided documents.
+    Question: {query}
+    Documents: {documents}
     """
     def __init__(self, 
                  documents: list[str], 
@@ -237,4 +236,6 @@ class AgenticRAG(BaseRAG):
     def __call__(self, 
                  query: str
                  ) -> tuple[str, list[str]]:
-        return self.agent.run(query), [""]
+        result = self.agent.run(query)
+        print(type(result))
+        return result, [""]
