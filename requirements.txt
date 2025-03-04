@@ -51,6 +51,7 @@ click==8.1.8
     # via
     #   duckduckgo-search
     #   ray
+    #   typer
     #   uvicorn
 cloudpickle==3.1.1
     # via
@@ -131,6 +132,7 @@ httpx-sse==0.4.0
     # via langchain-community
 huggingface-hub==0.28.1
     # via
+    #   -r requirements.in
     #   smolagents
     #   tokenizers
     #   transformers
@@ -233,6 +235,7 @@ numpy==1.26.4
     #   opencv-python-headless
     #   outlines
     #   pandas
+    #   rank-bm25
     #   torchvision
     #   transformers
     #   vllm
@@ -398,6 +401,8 @@ pyyaml==6.0.2
     #   vllm
 pyzmq==26.2.1
     # via vllm
+rank-bm25==0.2.2
+    # via -r requirements.in
 ray==2.42.1
     # via vllm
 referencing==0.36.2
@@ -427,7 +432,9 @@ requests==2.32.3
 requests-toolbelt==1.0.0
     # via langsmith
 rich==13.9.4
-    # via smolagents
+    # via
+    #   smolagents
+    #   typer
 rpds-py==0.22.3
     # via
     #   jsonschema
@@ -441,16 +448,13 @@ sentencepiece==0.2.0
     #   mistral-common
     #   vllm
     #   xgrammar
-setuptools==75.8.0
-    # via
-    #   torch
-    #   vllm
+shellingham==1.5.4
+    # via typer
 six==1.17.0
     # via
     #   markdownify
     #   opencensus
     #   python-dateutil
-    #   vllm
 smart-open==7.1.0
     # via ray
 smolagents==1.9.2
@@ -515,6 +519,8 @@ transformers==4.49.0
     #   xgrammar
 triton==3.1.0
     # via torch
+typer==0.15.2
+    # via -r requirements.in
 typing-extensions==4.12.2
     # via
     #   anyio
@@ -530,6 +536,7 @@ typing-extensions==4.12.2
     #   referencing
     #   sqlalchemy
     #   torch
+    #   typer
     #   typing-inspect
     #   vllm
 typing-inspect==0.9.0
