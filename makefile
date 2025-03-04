@@ -24,7 +24,7 @@ benchmark-update:
 	uv pip install -r ./benchmark/requirements-eval.txt --quiet
 
 # Prepare dataset
-dataset:
+dataset: benchmark-update
 	uv run -m benchmark.prepare --dataset-type frames
 
 # Run benchmark
