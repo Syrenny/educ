@@ -14,7 +14,9 @@ class DBUser(Base):
     email = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
 
-    token = relationship("DBToken", back_populates="users")
+    token = relationship("DBToken", back_populates="user")
+    chunks = relationship("DBChunk", back_populates="user",
+                          cascade="all, delete-orphan")
 
 
 class DBToken(Base):
@@ -24,7 +26,7 @@ class DBToken(Base):
     token = db.Column(db.String, nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.now())
     
-    user = relationship("DBUser", back_populates="tokens")
+    user = relationship("DBUser", back_populates="token")
 
 
 class DBChunk(Base):
@@ -39,7 +41,6 @@ class DBChunk(Base):
     user = relationship("DBUser", back_populates="chunks")
 
 
-# Функция для обновления FTS-таблицы после вставки или обновления
 def update_fts_after_insert_update(mapper, connection, target):
     """Обновляет FTS-индекс после вставки или обновления."""
     connection.execute(
@@ -49,7 +50,6 @@ def update_fts_after_insert_update(mapper, connection, target):
     )
 
 
-# Функция для удаления из FTS-таблицы после удаления чанка
 def update_fts_after_delete(mapper, connection, target):
     """Удаляет запись из FTS-индекса после удаления чанка."""
     connection.execute(

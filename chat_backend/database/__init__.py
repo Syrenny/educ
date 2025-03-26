@@ -2,27 +2,22 @@ import sqlalchemy as db
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
+from chat_backend.security import create_user, UserModel
 from chat_backend.settings import settings
-from .models import DBUser, DBChunk, Base
+from .models import Base
 
 
-def manage_default_user(session: Session):
-    """Creates a default admin user if in debug mode, or deletes it if not in debug mode."""
-    default_admin_email = settings.default_admin_email
-    default_admin_password = settings.default_admin_password
-
-    existing_user = session.query(DBUser).filter_by(
-        email=default_admin_email).first()
-
-    if settings.debug:
-        if existing_user is None:
-            session.add(DBUser(email=default_admin_email,
-                        password=default_admin_password))
-            session.commit()
-    else:
-        if existing_user:
-            session.delete(existing_user)
-            session.commit()
+def create_default_user(session: Session) -> None:
+    """Creates a default admin user."""
+    user = UserModel(
+        email=settings.default_admin_email,
+        password=settings.default_admin_password
+    )
+    create_user(
+        session, 
+        email=user.email,
+        password=user.password
+    )
 
 
 def create_session():
@@ -31,19 +26,18 @@ def create_session():
     engine = db.create_engine(DATABASE_URL, connect_args={
                               "check_same_thread": False})
 
-    db.event.listen(DBChunk, 'after_insert', DBChunk.update_fts)
-    db.event.listen(DBChunk, 'after_update', DBChunk.update_fts)
-
     Base.metadata.create_all(engine)
 
     # Create FTS5 table for full-text search
     with engine.connect() as conn:
-        conn.execute(
+        conn.exec_driver_sql(
             "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(chunk_text)")
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     session = SessionLocal()
-    manage_default_user(session)
+    
+    if settings.debug:
+        create_default_user(session)
 
     return session

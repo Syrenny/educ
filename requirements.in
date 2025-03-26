@@ -1,5 +1,5 @@
 fastapi
-pydantic
+pydantic[email]
 pydantic-settings
 python-dotenv
 openai
@@ -23,6 +23,10 @@ typer
 
 # JWT tokens
 pyjwt
+
+
+# Passwords hash 
+bcrypt
 
 # Database
 sqlalchemy

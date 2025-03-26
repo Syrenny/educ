@@ -29,6 +29,12 @@ mongo:
 		fi \
 	fi
 
+## Launch pytest
+test:
+	rm local.db
+	pytest
+	rm local.db
+
 # === Frontend ===
 
 ## Run frontend development server

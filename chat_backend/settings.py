@@ -1,7 +1,9 @@
 from pydantic_settings import BaseSettings
 
 
-class Settings(BaseSettings):  
+class Settings(BaseSettings): 
+    debug: bool
+     
     # Cache store
     embeddings_cache_path: str
       
@@ -36,6 +38,10 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str
     jwt_token_expires_minutes: int
+    
+    # default user
+    default_admin_email: str
+    default_admin_password: str
     
     class Config:
         env_file = ".env"

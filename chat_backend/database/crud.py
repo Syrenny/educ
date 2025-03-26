@@ -22,7 +22,6 @@ def create_user(
         session.commit()
         return user
     except IntegrityError as e:
-        # Ошибка при нарушении ограничений целостности (например, уникальности email)
         session.rollback()
         logger.error(f"Ошибка при создании пользователя (IntegrityError): {e}")
         raise
@@ -47,10 +46,17 @@ def create_token(
     ) -> DBToken:
     """Создает токен для пользователя."""
     try:
-        new_token = DBToken(user_id=user_id, token=token)
-        session.add(new_token)
+        existing_token = session.query(
+            DBToken).filter_by(user_id=user_id).first()
+
+        if existing_token:
+            existing_token.token = token  # Обновляем токен
+        else:
+            existing_token = DBToken(user_id=user_id, token=token)
+            session.add(existing_token)  # Создаем новый
+
         session.commit()
-        return new_token
+        return existing_token
     except SQLAlchemyError as e:
         session.rollback()
         logger.error(f"Ошибка при создании токена: {e}")
