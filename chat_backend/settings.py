@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     s3_bucket: str
     s3_region: str
     
+    # jwt
+    jwt_secret_key: str
+    jwt_algorithm: str
+    jwt_token_expires_minutes: int
+    
     class Config:
         env_file = ".env"
         

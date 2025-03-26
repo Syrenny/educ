@@ -10,6 +10,7 @@ python-multipart
 smolagents
 langchain
 langchain-community
+langchain-openai
 
 # Downloading models and datasets
 huggingface-hub
@@ -20,5 +21,9 @@ rank_bm25
 # Command line interface
 typer
 
-# s3
-boto3
+# JWT tokens
+pyjwt
+
+# Database
+sqlalchemy
+

@@ -1,6 +1,4 @@
 import os
-import base64
-from enum import Enum
 
 import typer
 from tqdm import tqdm
@@ -11,7 +9,6 @@ from ragas import (
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from langchain_openai import ChatOpenAI
-from langchain_together import ChatTogether
 from langchain.storage import LocalFileStore
 from langchain_community.cache import SQLiteCache
 from langchain.embeddings import CacheBackedEmbeddings
@@ -19,11 +16,11 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_core.outputs import LLMResult, ChatGeneration
 
+from chat_backend.settings import settings
 from benchmark.metrics import ragas_metrics
-from benchmark.prepare import load_dataset_from_files, BenchmarkType
 from benchmark.configurations import BaseRAG
 from benchmark.common import logger, ConfigType
-from chat_backend.settings import settings
+from benchmark.prepare import load_dataset_from_files, BenchmarkType
 
 os.environ["RAGAS_APP_TOKEN"] = settings.ragas_api_key
 
@@ -144,13 +141,6 @@ def evaluate(
     
     # Save dataset for checking
     dataset.to_jsonl("./benchmark/data/transformed/inference.jsonl")
-    
-    # eval_llm = ChatTogether(
-    #     model=settings.benchmark_llm_model_name,
-    #     api_key=settings.benchmark_llm_api_key,
-    #     cache=SQLiteCache("./benchmark/data/cache/openai_cache.db"),
-    #     rate_limiter=together_rate_limiter,
-    # )
     
     eval_llm = ChatOpenAI(
         model=settings.benchmark_llm_model_name,

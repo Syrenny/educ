@@ -3,6 +3,9 @@ from fastapi import (
     Security,
 )
 
+from pydantic import Field, StrictStr
+from typing_extensions import Annotated
+
 from chat_backend.models import (
     TokenModel,
     DeleteFileResponse,
@@ -10,8 +13,6 @@ from chat_backend.models import (
     FileModel
 )
 from chat_backend.security import get_token
-from pydantic import Field, StrictStr
-from typing_extensions import Annotated
 
 
 router = APIRouter()

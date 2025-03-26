@@ -8,6 +8,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.cache import SQLiteCache
 from langchain_core.rate_limiters import InMemoryRateLimiter
 
+from chat_backend.database import create_session
 from chat_backend.settings import settings
 from chat_backend.api.files import router as files_router
 from chat_backend.api.completions import router as completions_router
@@ -46,6 +47,8 @@ def get_langchain_openai_instance():
 async def lifespan(app: FastAPI):
     app.state.s3_client = get_s3_client()
     app.state.langchain_openai_client = get_langchain_openai_instance()
+    app.state.db_session = create_session()
+    
     yield
 
 
