@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 
@@ -15,32 +17,32 @@ settings.file_storage_path.mkdir(parents=True, exist_ok=True)
 
 @router.post(
     "/files",
-    response_model=FileModel,
     tags=["Files"],
     summary="Upload a file",
 )
 async def add_file(
-    file: UploadFile = File(...),
+    files: UploadFile = File(...),
     user_id: int = Depends(get_user_id),
-    session: Session = Depends(get_db)
-) -> FileModel:
+) -> list[FileModel]:
     """Upload a file and store it."""
-    file_data = await file.read()
-    file_model = FileModel(
-        meta=FileMeta(
-            user_id=user_id,
-            filename=file.filename,
-        ),
-        file=file_data
-    )
-    storage.write(file_model)
+    file_models = []
+    for file in files:
+        file_data = await file.read()
+        file_model = FileModel(
+            meta=FileMeta(
+                user_id=user_id,
+                filename=file.filename,
+            ),
+            file=file_data
+        )
+        storage.write(file_model)
+        file_models.append(file_model)
 
-    return file_model
+    return file_models
 
 
 @router.delete(
     "/files/{filename}",
-    response_model=bool,
     tags=["Files"],
     summary="Delete a file",
 )
@@ -79,7 +81,6 @@ async def download_file(
 
 @router.get(
     "/files",
-    response_model=list[FileMeta],
     tags=["Files"],
     summary="List all files",
 )

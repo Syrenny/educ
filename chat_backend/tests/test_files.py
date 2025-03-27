@@ -3,10 +3,10 @@ from io import BytesIO
 
 def test_upload_file(client, headers):
     """Test uploading a file."""
-    file_data = b"test content"
+    files = {'files': ('test.txt', b"test-text")}
     response = client.post(
         "/files",
-        files={"file": ("test.txt", BytesIO(file_data), "text/plain")},
+        data=files,
         headers=headers
     )
     assert response.status_code == 200

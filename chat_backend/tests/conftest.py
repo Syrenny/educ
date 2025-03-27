@@ -3,7 +3,6 @@ from fastapi.testclient import TestClient
 
 from chat_backend.main import app
 from chat_backend.settings import settings
-from chat_backend.database import SessionLocal, Base
 
 
 @pytest.fixture
