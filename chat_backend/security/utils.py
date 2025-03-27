@@ -43,7 +43,7 @@ def get_user_id(credentials: HTTPAuthorizationCredentials = Depends(bearer_auth)
     decoded = verify_access_token(token)
     
     if not decoded:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(status_code=401, detail="Неверный или просроченный токен")
     
     return decoded["id"]
 
@@ -66,10 +66,8 @@ def generate_access_token(db_user: DBUser) -> str:
 # === Passwords ===
 
 def hash_password(password: str) -> str:
-    """Хеширует пароль."""
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверяет совпадение пароля с хешем."""
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+def verify_password(stored_hash: str, password: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))

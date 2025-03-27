@@ -31,9 +31,7 @@ mongo:
 
 ## Launch pytest
 test:
-	rm local.db
-	pytest
-	rm local.db
+	MODE=TEST pytest
 
 # === Frontend ===
 

@@ -1,8 +1,10 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings): 
-    debug: bool
+    mode: str
      
     # Cache store
     embeddings_cache_path: str
@@ -42,6 +44,9 @@ class Settings(BaseSettings):
     # default user
     default_admin_email: str
     default_admin_password: str
+    
+    # pdf-saving
+    file_storage_path: Path
     
     class Config:
         env_file = ".env"

@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from chat_backend.models import (
@@ -15,8 +15,7 @@ router = APIRouter()
 
 
 async def create_chat_completion(
-    request: ChatCompletionRequest, 
-    user_id: int = Depends(get_user_id)
+    request: ChatCompletionRequest,
     ):
     # let's pretend every word is a token and return it over time
     text_resp = request.messages[-1]["content"]
@@ -24,6 +23,7 @@ async def create_chat_completion(
 
     for i, token in enumerate(tokens):
         chunk = ChatCompletionStreamResponse(
+            model="null",
             choices=[
                 ChatCompletionResponseStreamChoice(
                     delta={"content": token + " "},

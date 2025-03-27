@@ -1,10 +1,10 @@
 import sqlalchemy as db
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
-from chat_backend.security import create_user, UserModel
+from chat_backend.security import UserModel, hash_password
 from chat_backend.settings import settings
 from .models import Base
+from .crud import *
 
 
 def create_default_user(session: Session) -> None:
@@ -16,28 +16,48 @@ def create_default_user(session: Session) -> None:
     create_user(
         session, 
         email=user.email,
-        password=user.password
+        password=hash_password(user.password)
     )
 
 
-def create_session():
-    DATABASE_URL = "sqlite:///local.db"
+if settings.mode == "TEST":
+    # source: https://github.com/ArjanCodes/examples/blob/main/2023/apitesting/test_api.py
+    engine = db.create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=db.StaticPool,
+    )
+else:
+    engine = db.create_engine(
+        "sqlite:///local.db",
+        connect_args={"check_same_thread": False}
+    )
 
-    engine = db.create_engine(DATABASE_URL, connect_args={
-                              "check_same_thread": False})
+Base.metadata.create_all(engine)
 
-    Base.metadata.create_all(engine)
+with engine.connect() as conn:
+    conn.exec_driver_sql(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(chunk_text)")
 
-    # Create FTS5 table for full-text search
-    with engine.connect() as conn:
-        conn.exec_driver_sql(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(chunk_text)")
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+def get_db():
     session = SessionLocal()
-    
-    if settings.debug:
-        create_default_user(session)
+    try:
+        yield session
+    except Exception as e:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
-    return session
+
+if settings.mode in ["DEBUG", "TEST"]:
+    session = next(get_db())
+    if get_user_by_email(
+        session,
+        email=settings.default_admin_email
+    ) is None:
+        create_default_user(session)
+        session.commit()      

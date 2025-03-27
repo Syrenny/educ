@@ -1,31 +1,7 @@
-import json
-import contextlib
-
-import pytest
-from fastapi.testclient import TestClient
-
-from chat_backend.main import app
-from chat_backend.settings import settings
+import json     
 
 
-@pytest.fixture
-def client():
-    with TestClient(app) as client:
-        yield client
-        
-        
-@pytest.fixture
-def token(client):
-    user_data = {
-        "email": settings.default_admin_email,
-        "password": settings.default_admin_password
-    }
-    response = client.post("/login_user", json=user_data)
-    response_data = response.json()
-    return response_data['token']
-
-
-def test_chat_completions(client, token):
+def test_chat_completions(client, headers):
     # === Send completion ===
     
     request_data = {
@@ -33,11 +9,6 @@ def test_chat_completions(client, token):
             {"role": "user", "content": "Декоратор field_validator всегда принимает один обязательный аргумент - название поля, которое необходимо валидировать. Второй аргумент, который предпочтительно указывать, mode."}
         ],
         "stream": True
-    }
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
     }
     
     completion_params = {
@@ -50,7 +21,6 @@ def test_chat_completions(client, token):
     response_text = ""
     with client.stream(**completion_params) as response:
         for chunk in response.iter_lines():
-            print("Chunk", chunk)
             if chunk:
                 decoded_chunk = chunk
                 response_text += decoded_chunk + "\n"

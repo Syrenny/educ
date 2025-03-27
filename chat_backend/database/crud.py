@@ -4,10 +4,18 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
+from chat_backend.settings import settings
 from .models import DBUser, DBToken, DBChunk
 
 
 logger = logging.getLogger(__name__)
+
+
+def commit_or_flush(session: Session):
+    if settings.mode == "TEST":
+        session.flush()
+    else:
+        session.commit()
 
 
 def create_user(
@@ -19,7 +27,7 @@ def create_user(
     try:
         user = DBUser(email=email, password=password)
         session.add(user)
-        session.commit()
+        commit_or_flush(session)
         return user
     except IntegrityError as e:
         session.rollback()
@@ -55,7 +63,7 @@ def create_token(
             existing_token = DBToken(user_id=user_id, token=token)
             session.add(existing_token)  # Создаем новый
 
-        session.commit()
+        commit_or_flush(session)
         return existing_token
     except SQLAlchemyError as e:
         session.rollback()
@@ -76,7 +84,7 @@ def save_chunks(
             for chunk in chunks
         ]
         session.bulk_save_objects(chunk_objects)
-        session.commit()
+        commit_or_flush(session)
     except SQLAlchemyError as e:
         session.rollback()
         logger.error(f"Ошибка при сохранении чанков: {e}")
@@ -122,7 +130,7 @@ def delete_chunks(
             session.query(DBChunk).filter(DBChunk.id.in_(
                 chunk_ids)).delete(synchronize_session=False)
             session.execute(text("DELETE FROM fts_chunks WHERE rowid IN :ids"), {"ids": tuple(chunk_ids)})
-        session.commit()
+        commit_or_flush(session)
     except SQLAlchemyError as e:
         session.rollback()
         logger.error(f"Ошибка при удалении чанков: {e}")
