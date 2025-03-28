@@ -33,13 +33,19 @@ class LocalFileStorage(FileStorage):
     def _make_path(self, meta: FileMeta) -> Path:
         return (
             settings.file_storage_path /
+            "files" /
             str(meta.user_id) /
             meta.filename
         )
         
     def _make_meta_path(self, meta: FileMeta) -> Path:
         """Generate the path for the metadata file."""
-        return self._make_path(meta).with_suffix(".meta.json")
+        return (
+            settings.file_storage_path /
+            "meta" /
+            str(meta.user_id) /
+            meta.filename
+        )
         
     def read(self, meta: FileMeta) -> FileModel | None:
         """Read the file content if it exists."""
@@ -65,6 +71,7 @@ class LocalFileStorage(FileStorage):
         meta_path = self._make_meta_path(file.meta)
 
         file_path.parent.mkdir(parents=True, exist_ok=True)
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "wb") as f:
             f.write(file.file)
@@ -95,7 +102,7 @@ class LocalFileStorage(FileStorage):
     
     def list(self, user_id) -> list[FileMeta]:
         """List all files for a given user_id."""
-        user_dir = settings.file_storage_path / str(user_id)
+        user_dir = settings.file_storage_path / "files" / str(user_id)
 
         if not user_dir.exists() or not user_dir.is_dir():
             return []

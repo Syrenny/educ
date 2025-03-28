@@ -31,3 +31,7 @@ bcrypt
 # Database
 sqlalchemy
 
+# Working with pdf
+pymupdf
+PyPDF2
+

@@ -22,7 +22,7 @@ def verify_access_token(token: str):
     try:
         decoded_token = jwt.decode(
             token, 
-            settings.jwt_secret_key, 
+            settings.jwt_secret_key.get_secret_value(),
             algorithms=[settings.jwt_algorithm]
         )
         return decoded_token
@@ -58,7 +58,8 @@ def generate_access_token(db_user: DBUser) -> str:
     expire = datetime.now() + timedelta(minutes=settings.jwt_token_expires_minutes)
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key.get_secret_value(
+    ), algorithm=settings.jwt_algorithm)
     
     return encoded_jwt
     

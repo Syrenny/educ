@@ -386,6 +386,10 @@ pygments==2.19.1
     # via rich
 pyjwt==2.10.1
     # via -r requirements.in
+pymupdf==1.25.4
+    # via -r requirements.in
+pypdf2==3.0.1
+    # via -r requirements.in
 pytest==8.3.4
     # via xgrammar
 python-dateutil==2.9.0.post0

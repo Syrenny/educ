@@ -7,6 +7,12 @@ from chat_backend.main import app
 from chat_backend.settings import settings
 
 
+@pytest.fixture
+def valid_pdf() -> bytes:
+    with open("./chat_backend/tests/files/valid.pdf", "rb") as file:
+        return file.read()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def check_test_env():
     assert settings.mode == "TEST"
@@ -37,7 +43,7 @@ def headers(client):
 def upload_files_headers(client):
     user_data = {
         "email": settings.default_admin_email.get_secret_value(),
-        "password": settings.default_admin_password
+        "password": settings.default_admin_password.get_secret_value()
     }
     response = client.post("/login_user", json=user_data)
     response_data = response.json()

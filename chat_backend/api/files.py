@@ -1,8 +1,9 @@
+from io import BytesIO
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+import fitz
+from fastapi import APIRouter, Depends, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 
-from chat_backend.database import Session, get_db
 from chat_backend.models import FileModel, FileMeta
 from chat_backend.file_storage import LocalFileStorage
 from chat_backend.security import get_user_id
@@ -22,22 +23,48 @@ settings.file_storage_path.mkdir(parents=True, exist_ok=True)
 async def add_file(
     files: list[UploadFile],
     user_id: int = Depends(get_user_id),
-) -> list[FileModel]:
+) -> list[FileMeta]:
     """Upload a file and store it."""
+    
+    files_data = []
+
+    allowed_mime_types = {"application/pdf"}
+
+    # Read and check files
+    for upload_file in files:
+        if upload_file.content_type not in allowed_mime_types:
+            raise HTTPException(
+                status_code=400, detail=f"Only PDF files are allowed. Invalid file: {upload_file.filename}")
+            
+        file_data = upload_file.file.read()
+        try:
+            doc = fitz.open(
+                stream=BytesIO(file_data), 
+                filetype="pdf"
+            )
+            if doc.is_encrypted:
+                raise HTTPException(
+                    status_code=400, detail=f"Encrypted PDF files are not allowed: {upload_file.filename}")
+        except Exception:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid PDF file: {upload_file.filename}")
+            
+        files_data.append(file_data)
+    
+    # Upload files
     file_models = []
-    for file in files:
-        file_data = await file.read()
+    for file_data, upload_file in zip(files_data, files):
         file_model = FileModel(
             meta=FileMeta(
                 user_id=user_id,
-                filename=file.filename,
+                filename=upload_file.filename,
             ),
-            file=file_data
+            file=bytes(file_data)
         )
         storage.write(file_model)
         file_models.append(file_model)
 
-    return file_models
+    return [model.meta for model in file_models]
 
 
 @router.delete(
