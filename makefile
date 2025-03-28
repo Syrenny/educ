@@ -31,7 +31,7 @@ mongo:
 
 ## Launch pytest
 test:
-	MODE=TEST pytest
+	pytest
 
 # === Frontend ===
 

@@ -1,4 +1,3 @@
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
@@ -21,7 +20,7 @@ settings.file_storage_path.mkdir(parents=True, exist_ok=True)
     summary="Upload a file",
 )
 async def add_file(
-    files: UploadFile = File(...),
+    files: list[UploadFile],
     user_id: int = Depends(get_user_id),
 ) -> list[FileModel]:
     """Upload a file and store it."""

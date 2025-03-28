@@ -33,7 +33,7 @@ class LocalFileStorage(FileStorage):
     def _make_path(self, meta: FileMeta) -> Path:
         return (
             settings.file_storage_path /
-            meta.user_id /
+            str(meta.user_id) /
             meta.filename
         )
         
@@ -64,7 +64,7 @@ class LocalFileStorage(FileStorage):
         file_path = self._make_path(file.meta)        
         meta_path = self._make_meta_path(file.meta)
 
-        file_path.mkdir(parents=True, exist_ok=True)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "wb") as f:
             f.write(file.file)
@@ -75,7 +75,7 @@ class LocalFileStorage(FileStorage):
         return file_path
 
     def delete(self, meta: FileMeta) -> bool:
-        """Delete a file if it exists."""
+        """Delete a file if it exists.""" 
         file_path = self._make_path(meta)
         
         if file_path.exists() and file_path.is_file():
@@ -100,4 +100,4 @@ class LocalFileStorage(FileStorage):
         if not user_dir.exists() or not user_dir.is_dir():
             return []
 
-        return [FileMeta(user_id, file.name) for file in user_dir.iterdir() if file.is_file()]
+        return [FileMeta(user_id=user_id, filename=file.name) for file in user_dir.iterdir() if file.is_file()]
