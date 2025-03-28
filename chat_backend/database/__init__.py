@@ -10,8 +10,8 @@ from .crud import *
 def create_default_user(session: Session) -> None:
     """Creates a default admin user."""
     user = UserModel(
-        email=settings.default_admin_email,
-        password=settings.default_admin_password
+        email=settings.default_admin_email.get_secret_value(),
+        password=settings.default_admin_password.get_secret_value()
     )
     create_user(
         session, 
@@ -57,7 +57,7 @@ if settings.mode in ["DEBUG", "TEST"]:
     session = next(get_db())
     if get_user_by_email(
         session,
-        email=settings.default_admin_email
+        email=settings.default_admin_email.get_secret_value()
     ) is None:
         create_default_user(session)
         session.commit()      

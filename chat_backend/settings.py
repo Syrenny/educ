@@ -57,12 +57,9 @@ class Settings(BaseSettings):
 class TestSettings(Settings):
     model_config = SettingsConfigDict(
         env_file=".env.test", env_file_encoding="utf-8")
-    
-    mode: str
-    file_storage_path: Path
-        
-        
-if os.environ("MODE") == "TEST":
+
+
+if os.getenv("MODE", "DEFAULT") == "TEST":
     settings = TestSettings()
 else:
     settings = Settings()

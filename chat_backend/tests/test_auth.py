@@ -7,7 +7,7 @@ from chat_backend.database import get_user_by_email, get_db
 def test_register_user(client):
     user_data = {
         "email": "test_register_user@email.ru",
-        "password": settings.default_admin_password
+        "password": settings.default_admin_password.get_secret_value()
     }
 
     response = client.post("/register_user", json=user_data)
@@ -17,8 +17,8 @@ def test_register_user(client):
 
 def test_register_user_existing_email(client):
     user_data = {
-        "email": settings.default_admin_email,
-        "password": settings.default_admin_password
+        "email": settings.default_admin_email.get_secret_value(),
+        "password": settings.default_admin_password.get_secret_value()
     }
     client.post("/register_user", json=user_data)
 
@@ -32,7 +32,7 @@ def test_register_user_existing_email(client):
 def test_register_user_invalid_email(client):
     user_data = {
         "email": "invalid_email",
-        "password": settings.default_admin_password
+        "password": settings.default_admin_password.get_secret_value()
     }
 
     response = client.post("/register_user", json=user_data)
@@ -61,8 +61,8 @@ def test_register_user_empty_request(client):
 
 def test_login_user_success(client):
     user_data = {
-        "email": settings.default_admin_email,
-        "password": settings.default_admin_password
+        "email": settings.default_admin_email.get_secret_value(),
+        "password": settings.default_admin_password.get_secret_value()
     }
     client.post("/register_user", json=user_data)
 
@@ -74,14 +74,14 @@ def test_login_user_success(client):
 
 def test_login_user_invalid_email(client):
     user_data = {
-        "email": settings.default_admin_email,
-        "password": settings.default_admin_password
+        "email": settings.default_admin_email.get_secret_value(),
+        "password": settings.default_admin_password.get_secret_value()
     }
     client.post("/register_user", json=user_data)
 
     invalid_user_data = {
         "email": "wronguser@example.com",
-        "password": settings.default_admin_password
+        "password": settings.default_admin_password.get_secret_value()
     }
     response = client.post("/login_user", json=invalid_user_data)
 
@@ -91,13 +91,13 @@ def test_login_user_invalid_email(client):
 
 def test_login_user_invalid_password(client):
     user_data = {
-        "email": settings.default_admin_email,
-        "password": settings.default_admin_password
+        "email": settings.default_admin_email.get_secret_value(),
+        "password": settings.default_admin_password.get_secret_value()
     }
     client.post("/register_user", json=user_data)
 
     invalid_user_data = {
-        "email": settings.default_admin_email,
+        "email": settings.default_admin_email.get_secret_value(),
         "password": "wrongpassword"
     }
     response = client.post("/login_user", json=invalid_user_data)
@@ -108,8 +108,8 @@ def test_login_user_invalid_password(client):
 
 def test_password_hashing(client):
     user_data = {
-        "email": settings.default_admin_email,
-        "password": settings.default_admin_password
+        "email": settings.default_admin_email.get_secret_value(),
+        "password": settings.default_admin_password.get_secret_value()
     }
     session = next(get_db())
     db_user = get_user_by_email(session, user_data["email"])
