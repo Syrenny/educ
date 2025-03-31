@@ -20,26 +20,43 @@ def create_default_user(session: Session) -> None:
     )
 
 
-if settings.mode == "TEST":
-    # source: https://github.com/ArjanCodes/examples/blob/main/2023/apitesting/test_api.py
-    engine = db.create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=db.StaticPool,
-    )
-else:
-    engine = db.create_engine(
-        "sqlite:///local.db",
-        connect_args={"check_same_thread": False}
-    )
+def init_db():
+    if settings.mode == "TEST":
+        # source: https://github.com/ArjanCodes/examples/blob/main/2023/apitesting/test_api.py
+        engine = db.create_engine(
+            "sqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=db.StaticPool,
+        )
+    else:
+        engine = db.create_engine(
+            "sqlite:///local.db",
+            connect_args={"check_same_thread": False}
+        )
 
-Base.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
 
-with engine.connect() as conn:
-    conn.exec_driver_sql(
-        "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(chunk_text)")
+    with engine.connect() as conn:
+        conn.exec_driver_sql(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(chunk_text)")
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
+    if settings.mode in ["DEBUG", "TEST"]:
+        session = session_factory()
+        try:
+            if get_user_by_email(
+                session, email=settings.default_admin_email.get_secret_value()
+            ) is None:
+                create_default_user(session)
+                session.commit()
+        finally:
+            session.close()
+
+    return session_factory
+
+
+SessionLocal = init_db()
 
 
 def get_db():
@@ -50,14 +67,4 @@ def get_db():
         session.rollback()
         raise
     finally:
-        session.close()
-
-
-if settings.mode in ["DEBUG", "TEST"]:
-    session = next(get_db())
-    if get_user_by_email(
-        session,
-        email=settings.default_admin_email.get_secret_value()
-    ) is None:
-        create_default_user(session)
-        session.commit()      
+        session.close()     

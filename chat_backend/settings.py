@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     
     # pdf-saving
     file_storage_path: Path
+    max_files_per_user: int
+    max_file_size: int
     
     
 class TestSettings(Settings):

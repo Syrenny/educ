@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 import sqlalchemy as db
@@ -6,6 +7,25 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 Base = declarative_base()
+
+
+class DBFileMeta(Base):
+    __tablename__ = "file_meta"
+
+    id = db.Column(db.Integer, primary_key=True,
+                autoincrement=True)
+    file_id = db.Column(db.String, unique=True, nullable=False)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                     nullable=False)
+    filename = db.Column(db.String, nullable=False)
+
+    user = relationship("DBUser", back_populates="files_meta")
+    
+    @staticmethod
+    def generate_file_id(filename: str) -> str:
+        file_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, filename)
+        return str(file_uuid)
 
 
 class DBUser(Base):
@@ -17,6 +37,8 @@ class DBUser(Base):
     token = relationship("DBToken", back_populates="user")
     chunks = relationship("DBChunk", back_populates="user",
                           cascade="all, delete-orphan")
+    files_meta = relationship("DBFileMeta", back_populates="user",
+                              cascade="all, delete-orphan")
 
 
 class DBToken(Base):

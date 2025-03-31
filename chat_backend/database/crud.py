@@ -4,18 +4,60 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from chat_backend.settings import settings
-from .models import DBUser, DBToken, DBChunk
+from .models import *
 
 
 logger = logging.getLogger(__name__)
 
 
 def commit_or_flush(session: Session):
-    if settings.mode == "TEST":
-        session.flush()
-    else:
-        session.commit()
+    session.commit()
+        
+        
+def list_file_meta(
+    session: Session,
+    user_id: int
+) -> list[DBFileMeta]:
+    return session.query(DBFileMeta).filter(
+        DBFileMeta.user_id == user_id,
+    ).all()
+        
+        
+def add_file_meta(
+    session: Session,
+    user_id: int,
+    filename: str
+    ) -> DBFileMeta:
+    file_meta = DBFileMeta(
+        user_id=user_id,
+        filename=filename,
+        file_id=DBFileMeta.generate_file_id(filename)
+    )
+    session.add(file_meta)
+    
+    return file_meta
+
+
+def find_file_meta(
+    session: Session,
+    user_id: int,
+    file_id: str
+) -> None | DBFileMeta:
+    return session.query(DBFileMeta).filter(
+        DBFileMeta.user_id == user_id,
+        DBFileMeta.file_id == file_id
+    ).first()
+
+
+def delete_file_meta(
+    session: Session,
+    user_id: int,
+    file_id: str,
+    ) -> None | DBFileMeta:    
+    if file_meta := find_file_meta(session, user_id, file_id):
+        session.delete(file_meta)
+
+    return file_meta
 
 
 def create_user(

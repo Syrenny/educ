@@ -1,9 +1,15 @@
 import json
+from io import BytesIO
+from typing import Iterator
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+import fitz
+from fastapi import UploadFile
+
+from chat_backend.exceptions import *
 from chat_backend.settings import settings
-from chat_backend.models import FileModel, FileMeta
+from chat_backend.models import *
 
 
 class FileStorage(ABC):
@@ -28,62 +34,51 @@ class FileStorage(ABC):
         pass
     
     
-class LocalFileStorage(FileStorage):
+class LocalFileStorage(FileStorage):        
     """Generate the path where the file should be stored."""
-    def _make_path(self, meta: FileMeta) -> Path:
+    def _make_path(self, file_id: str, user_id: int) -> Path:
         return (
             settings.file_storage_path /
             "files" /
-            str(meta.user_id) /
-            meta.filename
-        )
-        
-    def _make_meta_path(self, meta: FileMeta) -> Path:
-        """Generate the path for the metadata file."""
-        return (
-            settings.file_storage_path /
-            "meta" /
-            str(meta.user_id) /
-            meta.filename
+            str(user_id) /
+            f"{file_id}.pdf"
         )
         
     def read(self, meta: FileMeta) -> FileModel | None:
         """Read the file content if it exists."""
         file_path = self.exists(meta)
-        meta_path = self._make_meta_path(meta)
 
-        if file_path and meta_path.exists():
+        if file_path:
             with open(file_path, "rb") as f:
                 file_data = f.read()
-            with open(meta_path, "r", encoding="utf-8") as f:
-                meta_data = json.load(f)
 
             return FileModel(
-                meta=FileMeta(**meta_data),
+                meta=meta,
                 file=file_data
             )
             
         return None
 
-    def write(self, file: FileModel) -> Path:
+    def write(self, user_id: int, model: FileModel) -> Path:
         """Write a file to the storage."""
-        file_path = self._make_path(file.meta)        
-        meta_path = self._make_meta_path(file.meta)
+        file_path = self._make_path(
+            file_id=model.meta.file_id,
+            user_id=user_id
+        )
 
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        meta_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "wb") as f:
-            f.write(file.file)
-            
-        with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump(file.meta.__dict__, f, ensure_ascii=False, indent=4)
+            f.write(model.file)
 
         return file_path
 
-    def delete(self, meta: FileMeta) -> bool:
+    def delete(self, user_id: int, meta: FileMeta) -> bool:
         """Delete a file if it exists.""" 
-        file_path = self._make_path(meta)
+        file_path = self._make_path(
+            file_id=meta.file_id,
+            user_id=user_id
+        )
         
         if file_path.exists() and file_path.is_file():
             file_path.unlink()
@@ -91,20 +86,58 @@ class LocalFileStorage(FileStorage):
         else:
             return False
 
-    def exists(self, meta: FileMeta) -> Path | None:
+    def exists(self, user_id: int, meta: FileMeta) -> Path | None:
         """Check if a file exists."""
-        file_path = self._make_path(meta)
+        file_path = self._make_path(
+            file_id=meta.file_id,
+            user_id=user_id
+        )
         
         if file_path.exists() and file_path.is_file():
             return file_path
         
         return None
     
-    def list(self, user_id) -> list[FileMeta]:
+    def list(self, user_id: int) -> list[str]:
         """List all files for a given user_id."""
-        user_dir = settings.file_storage_path / "files" / str(user_id)
+        user_dir = self._make_path(
+            file_id="123",
+            user_id=user_id
+        ).parent
 
         if not user_dir.exists() or not user_dir.is_dir():
             return []
 
-        return [FileMeta(user_id=user_id, filename=file.name) for file in user_dir.iterdir() if file.is_file()]
+        return [file.name for file in user_dir.iterdir() if file.is_file()]
+            
+            
+class FileReader:
+    allowed_mime_types = {"application/pdf"}
+
+    def _validate_before(self, file: UploadFile):
+        if file.content_type not in self.allowed_mime_types:
+            raise InvalidFileTypeException(file.filename)
+            
+    def read(self, files: list[UploadFile]) -> Iterator[bytes]:
+        for file in files:
+            self._validate_before(file)
+            
+            content = file.file.read()
+            
+            try:
+                doc = fitz.open(
+                    stream=BytesIO(content),
+                    filetype="pdf"
+                )
+            except Exception:
+                raise InvalidPdfException(file.filename)
+                
+            if doc.is_encrypted:
+                raise EncryptedPdfException(file.filename)
+        
+            yield content
+        
+    def __call__(self, files: list[UploadFile]) -> list[bytes]:
+        return [content for content in self.read(files)]
+            
+        

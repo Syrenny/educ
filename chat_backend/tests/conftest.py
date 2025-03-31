@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from chat_backend.main import app
 from chat_backend.settings import settings
+from chat_backend.database import init_db, get_db
 
 
 @pytest.fixture
@@ -20,8 +21,25 @@ def check_test_env():
 
 @pytest.fixture
 def client():
+    
+    SessionLocal = init_db()
+    
+    def override_get_db():
+        session = SessionLocal()
+        try:
+            yield session
+        except Exception as e:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+            
+    app.dependency_overrides[get_db] = override_get_db
+
     with TestClient(app) as client:
         yield client
+        
+    app.dependency_overrides.clear()
     
     
 @pytest.fixture
@@ -63,3 +81,4 @@ def clean_local_storage():
 
     if settings.file_storage_path.exists():
         shutil.rmtree(settings.file_storage_path)
+    
