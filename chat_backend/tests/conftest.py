@@ -21,7 +21,6 @@ def check_test_env():
 
 @pytest.fixture
 def client():
-    
     SessionLocal = init_db()
     
     def override_get_db():

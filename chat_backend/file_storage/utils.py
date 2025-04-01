@@ -44,9 +44,9 @@ class LocalFileStorage(FileStorage):
             f"{file_id}.pdf"
         )
         
-    def read(self, meta: FileMeta) -> FileModel | None:
+    def read(self, user_id: int, meta: FileMeta) -> FileModel | None:
         """Read the file content if it exists."""
-        file_path = self.exists(meta)
+        file_path = self.exists(user_id, meta)
 
         if file_path:
             with open(file_path, "rb") as f:
@@ -108,7 +108,7 @@ class LocalFileStorage(FileStorage):
         if not user_dir.exists() or not user_dir.is_dir():
             return []
 
-        return [file.name for file in user_dir.iterdir() if file.is_file()]
+        return [file.stem for file in user_dir.iterdir() if file.is_file()]
             
             
 class FileReader:

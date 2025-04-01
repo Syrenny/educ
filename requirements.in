@@ -10,6 +10,7 @@ python-multipart
 smolagents
 langchain
 langchain-community
+langchain-huggingface
 langchain-openai
 
 # Downloading models and datasets
@@ -34,4 +35,14 @@ sqlalchemy
 # Working with pdf
 pymupdf
 PyPDF2
+
+# Logging
+loguru
+
+# Worker for indexing
+celery
+
+redis
+
+spacy
 

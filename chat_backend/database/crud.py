@@ -113,16 +113,22 @@ def create_token(
         raise
 
 
-def save_chunks(
+def save_file_chunks(
     session: Session, 
     user_id: int, 
     filename: str, 
+    file_id: str,
     chunks: list[str]
     ) -> None:
     """Сохраняет чанки в БД и обновляет FTS-индекс."""
     try:
         chunk_objects = [
-            DBChunk(user_id=user_id, filename=filename, chunk_text=chunk)
+            DBChunk(
+                user_id=user_id, 
+                filename=filename, 
+                file_id=file_id,
+                chunk_text=chunk
+            )
             for chunk in chunks
         ]
         session.bulk_save_objects(chunk_objects)
@@ -133,17 +139,19 @@ def save_chunks(
         raise
 
 
-def find_chunks(
+def find_file_chunks(
     session: Session, 
     query: str, 
     user_id: int, 
-    filename: str
+    filename: str,
+    file_id: str
     ) -> list[DBChunk]:
     """Ищет чанки по тексту внутри файла пользователя с использованием FTS."""
     try:
         return session.query(DBChunk).filter(
             DBChunk.user_id == user_id,
             DBChunk.filename == filename,
+            DBChunk.file_id == file_id,
             DBChunk.id.in_(
                 session.query(text("rowid")).from_statement(
                     text("SELECT rowid FROM fts_chunks WHERE fts_chunks MATCH :query")
@@ -155,15 +163,17 @@ def find_chunks(
         return []
 
 
-def delete_chunks(
+def delete_file_chunks(
     session: Session, 
     user_id: int, 
-    filename: str
+    filename: str,
+    file_id: str,
     ) -> None:
     """Удаляет все чанки, связанные с файлом пользователя, и обновляет FTS-индекс."""
     try:
         chunk_ids = session.query(DBChunk.id).filter(
             DBChunk.user_id == user_id,
+            DBChunk.file_id == file_id,
             DBChunk.filename == filename
         ).all()
 

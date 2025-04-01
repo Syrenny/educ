@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     max_files_per_user: int
     max_file_size: int
     
+    # Chunker
+    chunker_name: str
+    
     
 class TestSettings(Settings):
     model_config = SettingsConfigDict(

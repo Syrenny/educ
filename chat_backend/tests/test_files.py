@@ -27,8 +27,6 @@ def test_upload_pdf_file(client, upload_files_headers, valid_pdf):
         headers=upload_files_headers
     )
     
-    print(response.json())
-
     assert response.status_code == 200
     assert response.json()[0]["filename"] == "test.pdf"
     
@@ -121,7 +119,11 @@ def test_list_file(client, valid_pdf, upload_files_headers):
     files = [
         ('files', ('valid.pdf', valid_pdf, 'application/pdf')),
     ]
-    response = client.post("/files", files=files, headers=upload_files_headers)
+    response = client.post(
+        "/files", 
+        files=files, 
+        headers=upload_files_headers
+    )
 
     assert response.status_code == 200
     assert response.json()[0]["filename"] == "valid.pdf"
@@ -133,7 +135,7 @@ def test_list_file(client, valid_pdf, upload_files_headers):
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert len(response.json()) == 1
-    assert "valid.pdf" == response.json()[0].filename
+    assert "valid.pdf" == response.json()[0]["filename"]
 
     
     
@@ -163,59 +165,68 @@ def test_list_multiple_files(client, upload_files_headers, valid_pdf):
     assert "other.pdf" in response_files
     
 
-# def test_download_file(client, upload_files_headers, valid_pdf):
-#     """Test downloading a file."""
-#     files = {'files': ('test.pdf', valid_pdf, 'application/pdf')}
-#     response = client.post("/files", files=files, headers=upload_files_headers)
+def test_download_file(client, upload_files_headers, valid_pdf):
+    """Test downloading a file."""
+    files = {'files': ('test.pdf', valid_pdf, 'application/pdf')}
+    response = client.post(
+        "/files", 
+        files=files, 
+        headers=upload_files_headers
+    )
 
-#     assert response.status_code == 200
-#     assert response.json()[0]["filename"] == "test.pdf"
+    assert response.status_code == 200
+    assert response.json()[0]["filename"] == "test.pdf"
 
-#     response = client.get("/files/test.pdf", headers=upload_files_headers)
-
-#     assert response.status_code == 200
-#     assert response.headers["content-type"] == "application/octet-stream"
-#     assert response.headers["content-disposition"] == 'attachment; filename="test.pdf"'
-#     assert response.content == valid_pdf
+    response = client.get(
+        f"/files/{response.json()[0]['file_id']}", headers=upload_files_headers
+    )
+ 
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/octet-stream"
+    assert response.headers["content-disposition"] == 'attachment; filename="test.pdf"'
+    assert response.content == valid_pdf
     
 
-# def test_download_nonexistent_file(client, upload_files_headers):
-#     """Test downloading a nonexistent file returns 404."""
-#     response = client.get(
-#         "/files/nonexistent.txt",
-#         headers=upload_files_headers
-#     )
-#     assert response.status_code == 404
-#     assert response.json()["detail"] == "File not found"
+def test_download_nonexistent_file(client, upload_files_headers):
+    """Test downloading a nonexistent file returns 404."""
+    response = client.get(
+        "/files/nonexistent.txt",
+        headers=upload_files_headers
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "File not found"
 
 
-# def test_delete_file(client, upload_files_headers, valid_pdf):
-#     """Test deleting a file."""
-#     files = {'files': ('test.pdf', valid_pdf, 'application/pdf')}
-#     response = client.post("/files", files=files, headers=upload_files_headers)
+def test_delete_file(client, upload_files_headers, valid_pdf):
+    """Test deleting a file."""
+    files = {'files': ('test.pdf', valid_pdf, 'application/pdf')}
+    response = client.post("/files", files=files, headers=upload_files_headers)
 
-#     assert response.status_code == 200
-#     assert response.json()[0]["filename"] == "test.pdf"
+    assert response.status_code == 200
+    assert response.json()[0]["filename"] == "test.pdf"
     
-#     response = client.delete(
-#         "/files/test.pdf",
-#         headers=upload_files_headers
-#     )
-#     assert response.status_code == 200
-#     assert response.json() is True
+    file_id = response.json()[0]['file_id']
     
-#     response = client.get(
-#         "/files/test.pdf",
-#         headers=upload_files_headers
-#     )
-#     assert response.status_code == 404
+    response = client.delete(
+        f"/files/{file_id}",
+        headers=upload_files_headers
+    )
+    assert response.status_code == 200
+    assert response.json() is True
+    
+    response = client.get(
+        f"/files/{file_id}",
+        headers=upload_files_headers
+    )
+    assert response.status_code == 404
 
 
-# def test_delete_nonexistent_file(client, upload_files_headers):
-#     """Test deleting a nonexistent file returns False."""
-#     response = client.delete(
-#         "/files/nonexistent.txt",
-#         headers=upload_files_headers
-#     )
-#     assert response.status_code == 200
-#     assert response.json() is False
+def test_delete_nonexistent_file(client, upload_files_headers):
+    """Test deleting a nonexistent file returns False."""
+    file_id = 12345
+    response = client.delete(
+        f"/files/{file_id}",
+        headers=upload_files_headers
+    )
+    assert response.status_code == 500
+    assert response.json()["detail"] == f"Failed to delete the file {file_id} from storage."

@@ -68,18 +68,13 @@ async def add_file(
             storage.delete(meta)
         raise SQLAlchemyUploadException
     
-    commit_or_flush(session)
-    
-    print(len(list_file_meta(
-        session,
-        user_id
-    )))
+    session.commit()
 
     return files_meta
 
 
 @router.delete(
-    "/files/{filename}",
+    "/files/{file_id}",
     tags=["Files"],
     summary="Delete a file",
 )
@@ -92,19 +87,21 @@ async def delete_file(
     try:
         db_file = delete_file_meta(
             session,
-            user_id
+            user_id,
+            file_id
         )
     except SQLAlchemyError:
         session.rollback()
         raise SQLAlchemyDeletionException
-    if not storage.delete(
+    if not db_file or not storage.delete(
+        user_id,
         FileMeta(
             file_id=file_id,
             filename=db_file.filename
         )
     ):
         session.rollback()
-        raise FileDeletionError
+        raise FileDeletionError(file_id)
         
     commit_or_flush(session)
     
@@ -112,7 +109,7 @@ async def delete_file(
 
 
 @router.get(
-    "/files/{filename}",
+    "/files/{file_id}",
     tags=["Files"],
     summary="Download a file",
 )
@@ -126,6 +123,7 @@ async def download_file(
         raise FileNotFoundException()
     
     file_model = storage.read(
+        user_id,
         FileMeta(
             file_id=file_id, 
             filename=db_file.filename
@@ -152,7 +150,6 @@ async def list_files(
 ) -> list[FileMeta]:
     files_meta = []
     for file_id in storage.list(user_id):
-        print(files_meta)
         if db_meta := find_file_meta(session, user_id, file_id):
             files_meta.append(FileMeta(
                 file_id=db_meta.file_id,

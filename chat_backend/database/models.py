@@ -2,8 +2,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as db
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, declarative_base
 
 
 Base = declarative_base()
@@ -57,6 +56,7 @@ class DBChunk(Base):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     filename = db.Column(db.String, nullable=False)
+    file_id = db.Column(db.String, nullable=False)
     chunk_text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now())
     
