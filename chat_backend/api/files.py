@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, UploadFile, HTTPException, Request
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi import APIRouter, Depends, UploadFile, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from sqlalchemy.exc import SQLAlchemyError
 
+from chat_backend.rag import index_document
 from chat_backend.models import FileMeta, FileModel
 from chat_backend.file_storage import LocalFileStorage, FileReader
 from chat_backend.security import get_user_id
@@ -10,7 +11,6 @@ from chat_backend.exceptions import *
 from chat_backend.database import (
     Session,
     get_db,
-    commit_or_flush, 
     add_file_meta, 
     delete_file_meta,
     find_file_meta,
@@ -31,6 +31,7 @@ settings.file_storage_path.mkdir(parents=True, exist_ok=True)
 )
 async def add_file(
     files: list[UploadFile],
+    background_tasks: BackgroundTasks,
     user_id: int = Depends(get_user_id),
     session: Session = Depends(get_db)
 ) -> list[FileMeta]:
@@ -67,8 +68,17 @@ async def add_file(
         for meta in files_meta:
             storage.delete(meta)
         raise SQLAlchemyUploadException
-    
+
     session.commit()
+    
+    # Start indexing
+    for content, meta in zip(contents, files_meta):
+        background_tasks.add_task(
+            index_document,
+            user_id=user_id,
+            file=bytes(content),
+            meta=meta
+        )
 
     return files_meta
 
@@ -103,7 +113,7 @@ async def delete_file(
         session.rollback()
         raise FileDeletionError(file_id)
         
-    commit_or_flush(session)
+    session.commit()
     
     return True
 

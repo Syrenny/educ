@@ -14,10 +14,10 @@ class DBFileMeta(Base):
     id = db.Column(db.Integer, primary_key=True,
                 autoincrement=True)
     file_id = db.Column(db.String, unique=True, nullable=False)
-
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'),
                      nullable=False)
     filename = db.Column(db.String, nullable=False)
+    is_indexed = db.Column(db.Boolean, default=False)
 
     user = relationship("DBUser", back_populates="files_meta")
     
@@ -64,11 +64,18 @@ class DBChunk(Base):
 
 
 def update_fts_after_insert_update(mapper, connection, target):
-    """Обновляет FTS-индекс после вставки или обновления."""
+    """Обновляет FTS-индекс после вставки или обновления, добавляя user_id и file_id."""
     connection.execute(
-        db.text("INSERT INTO fts_chunks (rowid, chunk_text) VALUES (:id, :text) "
-             "ON CONFLICT(rowid) DO UPDATE SET chunk_text=excluded.chunk_text"),
-        {"id": target.id, "text": target.chunk_text}
+        db.text("""
+            INSERT INTO fts_chunks (rowid, chunk_text, user_id, file_id)
+            VALUES (:id, :text, :user_id, :file_id)
+            ON CONFLICT(rowid) 
+            DO UPDATE SET chunk_text = excluded.chunk_text,
+                          user_id = excluded.user_id,
+                          file_id = excluded.file_id
+        """),
+        {"id": target.id, "text": target.chunk_text,
+            "user_id": target.user_id, "file_id": target.file_id}
     )
 
 
@@ -78,8 +85,8 @@ def update_fts_after_delete(mapper, connection, target):
         db.text("DELETE FROM fts_chunks WHERE rowid = :id"),
         {"id": target.id}
     )
-    
-    
+
+
 # Подключаем события к DBChunk
 db.event.listen(DBChunk, "after_insert", update_fts_after_insert_update)
 db.event.listen(DBChunk, "after_update", update_fts_after_insert_update)

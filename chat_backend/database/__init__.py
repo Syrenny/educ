@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import sqlalchemy as db
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -24,13 +26,17 @@ def init_db():
     if settings.mode == "TEST":
         # source: https://github.com/ArjanCodes/examples/blob/main/2023/apitesting/test_api.py
         engine = db.create_engine(
-            "sqlite:///:memory:",
-            connect_args={"check_same_thread": False},
-            poolclass=db.StaticPool,
+            "duckdb:///:memory:",
+            connect_args={
+                'read_only': False,
+                'config': {
+                    'memory_limit': '500mb'
+                }
+            }
         )
     else:
         engine = db.create_engine(
-            "sqlite:///local.db",
+            f"sqlite:///{settings.sqlite_db_path}",
             connect_args={"check_same_thread": False}
         )
 
@@ -38,7 +44,11 @@ def init_db():
 
     with engine.connect() as conn:
         conn.exec_driver_sql(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(chunk_text)")
+            """
+CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks 
+USING fts5(chunk_text, user_id UNINDEXED, file_id UNINDEXED);
+            """
+        )
 
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
@@ -58,6 +68,19 @@ def init_db():
 
 SessionLocal = init_db()
 
+
+@contextmanager
+def get_db_session():
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+        
 
 def get_db():
     session = SessionLocal()

@@ -31,6 +31,7 @@ bcrypt
 
 # Database
 sqlalchemy
+duckdb-engine
 
 # Working with pdf
 pymupdf
@@ -39,10 +40,4 @@ PyPDF2
 # Logging
 loguru
 
-# Worker for indexing
-celery
-
-redis
-
-spacy
 

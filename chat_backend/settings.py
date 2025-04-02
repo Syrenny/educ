@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     max_files_per_user: int
     max_file_size: int
     
+    sqlite_db_path: str
+    
     # Chunker
     chunker_name: str
     

@@ -1,34 +1,23 @@
-from abc import ABC, abstractmethod
+import re
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from chat_backend.rag.common import Asphodel
-from chat_backend.rag.llm import (
-    get_langchain_embeddings,
-    get_nlp
-)
-
-
-class BaseChunker(ABC, Asphodel):
-    @abstractmethod
-    def __call__(document: str):
-        pass
+from chat_backend.rag.utils.llm import get_langchain_embeddings
     
+class SemanticChunker:
+    def __init__(self):
+        self.embedder = get_langchain_embeddings()
     
-@BaseChunker.register("semantic-default")
-class SemanticChunker(BaseChunker):
     def __call__(
+        self,
         document: str,
         similarity_threshold: float = 0.8,
         ) -> list[str]:
-        embedder = get_langchain_embeddings()
-        nlp = get_nlp()
-
         chunks = []
-        sentences = [sent.text for sent in nlp(document).sents]
+        sentences = re.split(r'(?<=[.!?]) +', document)
 
-        embeddings = np.array(embedder.embed_documents(sentences))
+        embeddings = np.array(self.embedder.embed_documents(sentences))
 
         current_chunk = [sentences[0]]
         current_embedding = embeddings[0].reshape(1, -1)

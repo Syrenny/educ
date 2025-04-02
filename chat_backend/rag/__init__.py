@@ -1,2 +1,6 @@
-from .tasks import index_file
+from .workers import (
+    index_document,
+    retrieve,
+    generate
+)
 

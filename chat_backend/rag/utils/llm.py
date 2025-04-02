@@ -1,6 +1,5 @@
 from functools import lru_cache
 
-import spacy
 from langchain_openai import ChatOpenAI
 from langchain.storage import LocalFileStore
 from langchain_community.cache import SQLiteCache
@@ -48,8 +47,3 @@ def get_langchain_embeddings() -> LangchainEmbeddings:
         store,
         namespace=settings.benchmark_embedding_model
     )
-    
-    
-@lru_cache(maxsize=None)
-def get_nlp():
-    return spacy.load("en_core_web_sm")
