@@ -17,6 +17,8 @@ aiosignal==1.3.2
     #   ray
 airportsdata==20241001
     # via outlines
+alembic==1.15.2
+    # via -r requirements.in
 annotated-types==0.7.0
     # via pydantic
 anyio==4.8.0
@@ -221,12 +223,16 @@ loguru==0.7.3
     # via -r requirements.in
 lxml==5.3.1
     # via duckduckgo-search
+mako==1.3.9
+    # via alembic
 markdown-it-py==3.0.0
     # via rich
 markdownify==0.14.1
     # via smolagents
 markupsafe==3.0.2
-    # via jinja2
+    # via
+    #   jinja2
+    #   mako
 marshmallow==3.26.1
     # via dataclasses-json
 mdurl==0.1.2
@@ -512,6 +518,7 @@ soupsieve==2.6
 sqlalchemy==2.0.38
     # via
     #   -r requirements.in
+    #   alembic
     #   duckdb-engine
     #   langchain
     #   langchain-community
@@ -575,6 +582,7 @@ typer==0.15.2
     # via -r requirements.in
 typing-extensions==4.12.2
     # via
+    #   alembic
     #   anyio
     #   beautifulsoup4
     #   fastapi

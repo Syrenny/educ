@@ -133,15 +133,20 @@ def save_file_chunks(
 
 
 def find_file_chunks(
-    session: Session, 
-    query: str, 
-    user_id: int, 
+    session: Session,
+    query: str,
+    user_id: int,
     file_id: str
-    ) -> list[DBChunk]:
-    """Ищет чанки по тексту внутри файла пользователя с использованием FTS."""
+) -> list[DBChunk]:
+    """Ищет чанки по тексту внутри файла пользователя с использованием FTS в PostgreSQL."""
     try:
         result = session.execute(
-            text("SELECT rowid FROM fts_chunks WHERE user_id = :user_id AND file_id = :file_id AND fts_chunks MATCH :query"),
+            text("""
+                SELECT id FROM chunks
+                WHERE user_id = :user_id 
+                AND file_id = :file_id 
+                AND to_tsvector('english', chunk_text) @@ plainto_tsquery('english', :query)
+            """),
             {"user_id": user_id, "file_id": file_id, "query": query}
         )
 
