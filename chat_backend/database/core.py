@@ -23,37 +23,31 @@ def create_default_user(session: Session) -> None:
 
 
 def init_db():
-    if settings.mode == "TEST":
-        # source: https://github.com/ArjanCodes/examples/blob/main/2023/apitesting/test_api.py
-        engine = db.create_engine(
-            "duckdb:///:memory:",
-            connect_args={
-                'read_only': False,
-                'config': {
-                    'memory_limit': '500mb'
-                }
-            }
-        )
-    else:
-        engine = db.create_engine(
-            f"sqlite:///{settings.sqlite_db_path}",
-            connect_args={"check_same_thread": False}
+    engine = db.create_engine(
+        settings.sqlalchemy_url, 
+        pool_pre_ping=True
+    )
+    
+    with engine.connect() as conn:
+        conn.execution_options(isolation_level="AUTOCOMMIT").execute(
+            db.text("CREATE EXTENSION IF NOT EXISTS pg_trgm")
         )
 
     Base.metadata.create_all(engine)
-
-    with engine.connect() as conn:
-        conn.exec_driver_sql(
-            """
-CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks 
-USING fts5(chunk_text, user_id UNINDEXED, file_id UNINDEXED);
-            """
+    
+    with engine.connect() as connection:
+        connection.execute(
+            db.text(
+                'CREATE INDEX IF NOT EXISTS chunk_idx ON chunks USING GIN (chunk_text gin_trgm_ops);')
         )
 
     session_factory = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine)
+        autocommit=False, 
+        autoflush=False, 
+        bind=engine
+    )
 
-    if settings.mode in ["DEBUG", "TEST"]:
+    if settings.env in ["DEBUG", "TEST"]:
         session = session_factory()
         try:
             if get_user_by_email(

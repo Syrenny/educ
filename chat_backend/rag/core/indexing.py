@@ -5,6 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from chat_backend.rag.utils.llm import get_langchain_embeddings
     
+    
 class SemanticChunker:
     def __init__(self):
         self.embedder = get_langchain_embeddings()

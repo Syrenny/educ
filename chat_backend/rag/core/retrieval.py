@@ -16,11 +16,14 @@ class Reranker:
             query_embedding, chunks_embedding)[0]
 
         return [doc for _, doc in sorted(
-            zip(similarities, chunks), reverse=True)][5]
+            zip(similarities, chunks), reverse=True)][:5]
 
     def __call__(self,
                  query: str,
                  retrieved: list[str]
                  ) -> tuple[str, list[str]]:
+        
+        if not retrieved:
+            return []
 
         return self._rerank(query, retrieved)

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy.exc import SQLAlchemyError
@@ -14,7 +16,7 @@ from chat_backend.database import (
     add_file_meta, 
     delete_file_meta,
     find_file_meta,
-    list_file_meta
+    is_indexed
 )
 
 
@@ -32,7 +34,7 @@ settings.file_storage_path.mkdir(parents=True, exist_ok=True)
 async def add_file(
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
-    user_id: int = Depends(get_user_id),
+    user_id: UUID = Depends(get_user_id),
     session: Session = Depends(get_db)
 ) -> list[FileMeta]:
     """Upload a file and store it."""
@@ -75,6 +77,7 @@ async def add_file(
     for content, meta in zip(contents, files_meta):
         background_tasks.add_task(
             index_document,
+            session=session,
             user_id=user_id,
             file=bytes(content),
             meta=meta
@@ -83,14 +86,33 @@ async def add_file(
     return files_meta
 
 
+@router.get(
+    "/files/{file_id}/status", 
+    tags=["Files"]
+)
+async def get_indexing_status(
+    file_id: UUID, 
+    user_id: UUID = Depends(get_user_id),
+    session: Session = Depends(get_db)
+    ) -> bool:
+    status = is_indexed(
+        session=session,
+        user_id=user_id,
+        file_id=file_id
+    )
+    if status is None:
+        raise FileNotFoundException
+    return status
+
+
 @router.delete(
     "/files/{file_id}",
     tags=["Files"],
     summary="Delete a file",
 )
 async def delete_file(
-    file_id: str,
-    user_id: int = Depends(get_user_id),    
+    file_id: UUID,
+    user_id: UUID = Depends(get_user_id),
     session: Session = Depends(get_db)
 ) -> bool:
     """Delete a file if it exists."""
@@ -124,8 +146,8 @@ async def delete_file(
     summary="Download a file",
 )
 async def download_file(
-    file_id: str,
-    user_id: int = Depends(get_user_id),
+    file_id: UUID,
+    user_id: UUID = Depends(get_user_id),
     session: Session = Depends(get_db)
 ) -> StreamingResponse:
     """Return the file contents."""
@@ -155,7 +177,7 @@ async def download_file(
     summary="List all files",
 )
 async def list_files(
-    user_id: int = Depends(get_user_id),
+    user_id: UUID = Depends(get_user_id),
     session: Session = Depends(get_db)
 ) -> list[FileMeta]:
     files_meta = []

@@ -79,10 +79,8 @@ distro==1.9.0
     # via openai
 dnspython==2.7.0
     # via email-validator
-duckdb==1.2.1
-    # via duckdb-engine
-duckdb-engine==0.17.0
-    # via -r requirements.in
+docker==7.1.0
+    # via testcontainers
 duckduckgo-search==7.4.5
     # via smolagents
 einops==0.8.1
@@ -324,7 +322,6 @@ outlines-core==0.1.26
     # via outlines
 packaging==24.2
     # via
-    #   duckdb-engine
     #   huggingface-hub
     #   langchain-core
     #   lm-format-enforcer
@@ -369,6 +366,8 @@ protobuf==5.29.3
     #   vllm
 psutil==7.0.0
     # via vllm
+psycopg2-binary==2.9.10
+    # via -r requirements.in
 py-cpuinfo==9.0.0
     # via vllm
 py-spy==0.4.0
@@ -422,6 +421,7 @@ python-dotenv==1.0.1
     #   -r requirements.in
     #   pydantic-settings
     #   smolagents
+    #   testcontainers
     #   uvicorn
 python-multipart==0.0.20
     # via -r requirements.in
@@ -456,6 +456,7 @@ regex==2024.11.6
     #   transformers
 requests==2.32.3
     # via
+    #   docker
     #   google-api-core
     #   huggingface-hub
     #   langchain
@@ -519,7 +520,6 @@ sqlalchemy==2.0.38
     # via
     #   -r requirements.in
     #   alembic
-    #   duckdb-engine
     #   langchain
     #   langchain-community
 starlette==0.45.3
@@ -533,6 +533,8 @@ tenacity==9.0.0
     #   langchain
     #   langchain-community
     #   langchain-core
+testcontainers==4.10.0
+    # via -r requirements.in
 threadpoolctl==3.6.0
     # via scikit-learn
 tiktoken==0.9.0
@@ -596,6 +598,7 @@ typing-extensions==4.12.2
     #   referencing
     #   sentence-transformers
     #   sqlalchemy
+    #   testcontainers
     #   torch
     #   typer
     #   typing-inspect
@@ -605,7 +608,10 @@ typing-inspect==0.9.0
 tzdata==2025.2
     # via pandas
 urllib3==2.3.0
-    # via requests
+    # via
+    #   docker
+    #   requests
+    #   testcontainers
 uvicorn==0.34.0
     # via
     #   -r requirements.in
@@ -621,7 +627,9 @@ watchfiles==1.0.4
 websockets==15.0
     # via uvicorn
 wrapt==1.17.2
-    # via smart-open
+    # via
+    #   smart-open
+    #   testcontainers
 xformers==0.0.28.post3
     # via vllm
 xgrammar==0.1.13

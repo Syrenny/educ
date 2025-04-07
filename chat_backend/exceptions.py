@@ -1,9 +1,12 @@
+from uuid import UUID
 from enum import Enum
 
 from fastapi import HTTPException
 
 
 class FileErrorMessages(Enum):
+    NOT_INDEXED = "File {file_id} not indexed yet."
+    INDEXING_ERROR = "Error while indexing added file(s)."
     DELETE_ERROR = "Failed to delete the file {filename} from storage."
     SQL_UPLOAD_ERROR = "SQLAlchemy: Error uploading file"
     SQL_DELETE_ERROR = "SQLAlchemy: Error deleting file"
@@ -21,6 +24,16 @@ class FileUploadException(HTTPException):
     def __init__(self, error_message: FileErrorMessages, status_code: int, **kwargs):
         self.message = error_message.value.format(**kwargs)
         super().__init__(status_code=status_code, detail=self.message)
+        
+        
+class NotIndexedError(FileUploadException):
+    def __init__(self, file_id: UUID):
+        super().__init__(FileErrorMessages.NOT_INDEXED, 500, file_id=file_id)
+        
+        
+class IndexingError(FileUploadException):
+    def __init__(self):
+        super().__init__(FileErrorMessages.INDEXING_ERROR, 500)
 
 
 class FileDeletionError(FileUploadException):

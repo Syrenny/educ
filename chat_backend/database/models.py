@@ -1,9 +1,8 @@
-from sqlalchemy.schema import DDL
 import uuid
 from datetime import datetime
 
 import sqlalchemy as db
-from sqlalchemy.dialects.postgresql import UUID, TSVECTOR, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -43,7 +42,6 @@ class DBFileMeta(Base):
         "users.id"), nullable=False)
     filename = db.Column(db.String, nullable=False)
     is_indexed = db.Column(db.Boolean, default=False)
-    metadata = db.Column(JSONB, nullable=True)
 
     user = relationship("DBUser", back_populates="files_meta")
     chunks = relationship(
@@ -57,24 +55,21 @@ class DBChunk(Base):
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         "users.id"), nullable=False)
     filename = db.Column(db.String, nullable=False)
-    file_id = db.Column(UUID(as_uuid=True), nullable=False)
+    file_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
+        "file_meta.file_id"), nullable=False)
     chunk_text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
-    search_vector = db.Column(TSVECTOR)
 
     file_meta = relationship("DBFileMeta", back_populates="chunks")
     user = relationship("DBUser", back_populates="chunks")
-
-
-db.event.listen(
-    DBChunk.__table__, 'after_create',
-    DDL("CREATE INDEX chunks_fts_idx ON chunks USING GIN (search_vector);")
-)
-
-
-def update_search_vector(mapper, connection, target):
-    target.search_vector = db.func.to_tsvector("russian", target.chunk_text)
-
-
-db.event.listen(DBChunk, "before_insert", update_search_vector)
-db.event.listen(DBChunk, "before_update", update_search_vector)
+    
+    __table_args__ = (
+        db.Index(
+            'chunk_idx',
+            chunk_text,
+            postgresql_using='gin',
+            postgresql_ops={
+                'chunk_text': 'gin_trgm_ops'
+            }
+        ),
+    )

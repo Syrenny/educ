@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
 class FileMeta(BaseModel):
-    file_id: str 
+    file_id: UUID
     filename: str = Field(description="The name of the file.")
 
     

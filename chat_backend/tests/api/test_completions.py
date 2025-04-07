@@ -1,4 +1,5 @@
 import json
+import time
 
 
 def test_chat_completions(
@@ -7,7 +8,6 @@ def test_chat_completions(
     valid_pdf,
     upload_files_headers
     ):
-    # === Send completion ===
     
     files = [('files', ('test.pdf', valid_pdf, 'application/pdf'))]
     response = client.post(
@@ -21,7 +21,26 @@ def test_chat_completions(
     
     assert response.status_code == 200
     assert filename == "test.pdf"
-    
+
+    indexing_done = False
+    max_retries = 30
+    retries = 0
+    while not indexing_done and retries < max_retries:
+        status_response = client.get(
+            f"/files/{file_id}/status",
+            headers=headers
+        )
+        assert status_response.status_code == 200
+
+        indexing_done = status_response.json()
+
+        if not indexing_done:
+            retries += 1
+            time.sleep(1)
+            
+    print("Num retries:", retries)
+            
+    assert indexing_done, "File indexing did not complete in time"
 
     request_data = {
         "messages": [

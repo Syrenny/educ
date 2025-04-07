@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 from io import BytesIO
 from typing import Iterator
 from abc import ABC, abstractmethod
@@ -30,13 +31,14 @@ class FileStorage(ABC):
         pass
     
     @abstractmethod
-    def list(self, user_id: int):
+    def list(self, user_id: UUID):
         pass
     
     
 class LocalFileStorage(FileStorage):        
     """Generate the path where the file should be stored."""
-    def _make_path(self, file_id: str, user_id: int) -> Path:
+
+    def _make_path(self, file_id: UUID, user_id: UUID) -> Path:
         return (
             settings.file_storage_path /
             "files" /
@@ -44,7 +46,7 @@ class LocalFileStorage(FileStorage):
             f"{file_id}.pdf"
         )
         
-    def read(self, user_id: int, meta: FileMeta) -> FileModel | None:
+    def read(self, user_id: UUID, meta: FileMeta) -> FileModel | None:
         """Read the file content if it exists."""
         file_path = self.exists(user_id, meta)
 
@@ -59,7 +61,7 @@ class LocalFileStorage(FileStorage):
             
         return None
 
-    def write(self, user_id: int, model: FileModel) -> Path:
+    def write(self, user_id: UUID, model: FileModel) -> Path:
         """Write a file to the storage."""
         file_path = self._make_path(
             file_id=model.meta.file_id,
@@ -73,7 +75,7 @@ class LocalFileStorage(FileStorage):
 
         return file_path
 
-    def delete(self, user_id: int, meta: FileMeta) -> bool:
+    def delete(self, user_id: UUID, meta: FileMeta) -> bool:
         """Delete a file if it exists.""" 
         file_path = self._make_path(
             file_id=meta.file_id,
@@ -86,7 +88,7 @@ class LocalFileStorage(FileStorage):
         else:
             return False
 
-    def exists(self, user_id: int, meta: FileMeta) -> Path | None:
+    def exists(self, user_id: UUID, meta: FileMeta) -> Path | None:
         """Check if a file exists."""
         file_path = self._make_path(
             file_id=meta.file_id,
@@ -98,7 +100,7 @@ class LocalFileStorage(FileStorage):
         
         return None
     
-    def list(self, user_id: int) -> list[str]:
+    def list(self, user_id: UUID) -> list[str]:
         """List all files for a given user_id."""
         user_dir = self._make_path(
             file_id="123",

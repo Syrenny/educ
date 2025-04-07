@@ -4,27 +4,21 @@ import pytest
 from fastapi.testclient import TestClient
 
 from chat_backend.main import app
-from chat_backend.settings import settings
-from chat_backend.database import init_db, get_db
+from chat_backend.database import get_db
+from chat_backend.tests.common_fixtures import *
 
 
 @pytest.fixture
 def valid_pdf() -> bytes:
     with open("./chat_backend/tests/files/valid.pdf", "rb") as file:
         return file.read()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def check_test_env():
-    assert settings.mode == "TEST"
     
 
 @pytest.fixture
-def client():
-    SessionLocal = init_db()
+def client(db_session):
+    session, _ = db_session
     
     def override_get_db():
-        session = SessionLocal()
         try:
             yield session
         except Exception as e:

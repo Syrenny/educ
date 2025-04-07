@@ -31,7 +31,7 @@ bcrypt
 
 # Database
 sqlalchemy
-duckdb-engine
+psycopg2-binary
 
 # Working with pdf
 pymupdf
@@ -42,5 +42,8 @@ loguru
 
 # DB migrations
 alembic
+
+testcontainers[postgresql]
+
 
 

@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import datetime, timedelta
 
 import jwt
@@ -30,7 +31,7 @@ def verify_access_token(token: str):
         return None
 
 
-def get_user_id(credentials: HTTPAuthorizationCredentials = Depends(bearer_auth)) -> int | None:
+def get_user_id(credentials: HTTPAuthorizationCredentials = Depends(bearer_auth)) -> UUID | None:
     """
     Check and retrieve authentication information from custom bearer token.
 
@@ -45,7 +46,7 @@ def get_user_id(credentials: HTTPAuthorizationCredentials = Depends(bearer_auth)
     if not decoded:
         raise HTTPException(status_code=401, detail="Неверный или просроченный токен")
     
-    return decoded["id"]
+    return UUID(decoded["id"])
 
 
 def generate_access_token(db_user: DBUser) -> str:
@@ -53,7 +54,7 @@ def generate_access_token(db_user: DBUser) -> str:
     Создает JWT токен с переданными данными и временем жизни.
     """
     to_encode = {
-        "id": db_user.id
+        "id": str(db_user.id)
     }
     expire = datetime.now() + timedelta(minutes=settings.jwt_token_expires_minutes)
     to_encode.update({"exp": expire})
