@@ -5,3 +5,4 @@ from vllm.entrypoints.openai.protocol import (
 )
 
 from .files import *
+from .history import *

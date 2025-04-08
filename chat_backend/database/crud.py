@@ -198,3 +198,34 @@ def is_indexed(
     if db_file_meta is None:
         return None
     return db_file_meta.is_indexed
+
+
+def add_message(
+    session: Session,
+    user_id: UUID,
+    file_id: UUID,
+    content: str,
+    is_user: bool
+) -> DBMessage:
+    new_message = DBMessage(
+        user_id=user_id,
+        file_id=file_id,
+        content=content,
+        is_user_message=is_user
+    )
+
+    session.add(new_message)
+    session.flush()
+
+    return new_message
+    
+    
+def get_messages(
+    session: Session,
+    user_id: UUID,
+    file_id: UUID
+) -> list[DBMessage] | None:
+    return session.query(DBMessage).filter(
+        DBMessage.user_id == user_id,
+        DBMessage.file_id == file_id
+    ).order_by(DBMessage.timestamp).all()

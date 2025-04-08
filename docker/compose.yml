@@ -1,19 +1,21 @@
 services:
-  # server:
-  #   container_name: educ_server
-  #   build: 
-  #     context: ..
-  #     dockerfile: ./docker/Dockerfile
-  #   environment:
-  #     - MODE=default
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - postgres
+  server:
+    container_name: educ_server
+    build: 
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      - MODE=default
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - postgres
 
   postgres:
-    container_name: postgres_container
+    container_name: educ_pg
     image: postgres:14.8-alpine3.18
     command:
       - "postgres"
@@ -50,9 +52,9 @@ services:
       POSTGRES_USER: "educ-user"
       POSTGRES_PASSWORD: "pgpwd"
       PGDATA: "/var/lib/postgresql/data/pgdata"
-    # volumes:
-      # - init-database:/docker-entrypoint-initdb.d
-      # - educ-data:/var/lib/postgresql/data
+    volumes:
+      - init-database:/docker-entrypoint-initdb.d
+      - educ-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -67,13 +69,13 @@ services:
         limits:
           cpus: '1'
           memory: 4G
-    # networks:
-    #   - postgres
+    networks:
+      - postgres
 
 volumes:
   educ-data:
   init-database:
 
-# networks:
-#   postgres:
-#     driver: bridge
+networks:
+  postgres:
+    driver: bridge

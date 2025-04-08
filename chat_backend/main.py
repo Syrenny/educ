@@ -11,7 +11,8 @@ from chat_backend.api.auth import router as auth_router
 from chat_backend.settings import settings
 from chat_backend.api.files import router as files_router
 from chat_backend.api.completions import router as completions_router
-    
+from chat_backend.api.history import router as history_router 
+
     
 @lru_cache(maxsize=None)
 def get_langchain_openai_instance():
@@ -42,4 +43,5 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(completions_router)
 app.include_router(files_router)
 app.include_router(auth_router)
+app.include_router(history_router)
 

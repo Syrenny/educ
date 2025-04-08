@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import { getOIDCAuthorizationUrl } from "$lib/server/auth";
+// import { getOIDCAuthorizationUrl } from "$lib/server/auth";
 import { base } from "$app/paths";
 import { env } from "$env/dynamic/private";
 
@@ -17,10 +17,10 @@ export const actions = {
 			}
 		}
 
-		const authorizationUrl = await getOIDCAuthorizationUrl(
-			{ redirectURI },
-			{ sessionId: locals.sessionId }
-		);
+		// const authorizationUrl = await getOIDCAuthorizationUrl(
+		// 	{ redirectURI },
+		// 	{ sessionId: locals.sessionId }
+		// );
 
 		redirect(303, authorizationUrl);
 	},

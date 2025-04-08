@@ -16,6 +16,8 @@ from .crud import (
     find_file_chunks,
     delete_file_meta,
     set_indexed,
-    is_indexed
+    is_indexed,
+    get_messages,
+    add_message
 )
 from .models import Base

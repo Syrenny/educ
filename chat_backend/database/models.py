@@ -19,6 +19,9 @@ class DBUser(Base):
                           cascade="all, delete-orphan")
     files_meta = relationship(
         "DBFileMeta", back_populates="user", cascade="all, delete-orphan")
+    messages = relationship(
+        "DBMessage", back_populates="user", cascade="all, delete-orphan")
+
 
 
 class DBToken(Base):
@@ -46,6 +49,24 @@ class DBFileMeta(Base):
     user = relationship("DBUser", back_populates="files_meta")
     chunks = relationship(
         "DBChunk", back_populates="file_meta", cascade="all, delete-orphan")
+    messages = relationship(
+        "DBMessage", back_populates="file_meta", cascade="all, delete-orphan")
+
+
+class DBMessage(Base):
+    __tablename__ = "messages"
+
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
+        "file_meta.file_id"), nullable=False)
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
+        "users.id"), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
+    is_user_message = db.Column(db.Boolean, nullable=False)
+
+    file_meta = relationship("DBFileMeta", back_populates="messages")
+    user = relationship("DBUser", back_populates="messages")
 
 
 class DBChunk(Base):
