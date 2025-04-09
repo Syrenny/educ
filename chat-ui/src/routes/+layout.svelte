@@ -3,178 +3,155 @@
 
 	import "../styles/main.css";
 
-	import { onDestroy, onMount, untrack } from "svelte";
 	import { goto } from "$app/navigation";
 	import { base } from "$app/paths";
 	import { page } from "$app/stores";
+	import { onDestroy, onMount, untrack } from "svelte";
 
 	import { env as envPublic } from "$env/dynamic/public";
 
 	import { error } from "$lib/stores/errors";
-	import { createSettingsStore } from "$lib/stores/settings";
 
 	import { shareConversation } from "$lib/shareConversation";
 
-	import Toast from "$lib/components/Toast.svelte";
-	import NavMenu from "$lib/components/NavMenu.svelte";
-	import MobileNav from "$lib/components/MobileNav.svelte";
-	import titleUpdate from "$lib/stores/titleUpdate";
-	import DisclaimerModal from "$lib/components/DisclaimerModal.svelte";
-	import ExpandNavigation from "$lib/components/ExpandNavigation.svelte";
-	import { loginModalOpen } from "$lib/stores/loginModal";
 	import LoginModal from "$lib/components/LoginModal.svelte";
+	import MobileNav from "$lib/components/MobileNav.svelte";
+	import NavMenu from "$lib/components/NavMenu.svelte";
 	import OverloadedModal from "$lib/components/OverloadedModal.svelte";
+	import PdfReader from '$lib/components/PDFReader.svelte';
+	import Toast from "$lib/components/Toast.svelte";
+	import { loginModalOpen } from "$lib/stores/loginModal";
+	import titleUpdate from "$lib/stores/titleUpdate";
 	import { isHuggingChat } from "$lib/utils/isHuggingChat";
-    import PdfReader from '$lib/components/PDFReader.svelte';
+    import ChatWindow from '$lib/components/chat/ChatWindow.svelte';
+    import { DEFAULT_SETTINGS } from "$lib/types/Settings";
+
+    import axios from "axios";
+
+    import { user } from "$lib/stores/user"
 
 
-	let { data = $bindable(), children } = $props();
+    // interface FileMeta {
+    //     file_id: string;
+    //     name: string;
+    // }
 
-	let conversations = $state(data.conversations);
-	$effect(() => {
-		data.conversations && untrack(() => (conversations = data.conversations));
-	});
+    // interface Message {
+    //     content: string;
+    //     timestamp: string;
+    // }
 
-	let isNavOpen = $state(false);
-	let isNavCollapsed = $state(true);
+    // interface Conversation {
+    //     file: FileMeta;
+    //     messages: Message[];
+    // } 
 
-	let overloadedModalOpen = $state(false);
+	// let conversations: Conversation[] = $state([]);
+	// let overloadedModalOpen = $state(false);
+	// let errorToastTimeout: ReturnType<typeof setTimeout>;
+	// let currentError: string | undefined = $state();
 
-	let errorToastTimeout: ReturnType<typeof setTimeout>;
-	let currentError: string | undefined = $state();
+    // onMount(async () => {
+    //     const apiBase = env.API_URL || "";
+    //     let currentUser = $user.token;
 
-	async function onError() {
-		// If a new different error comes, wait for the current error to hide first
-		if ($error && currentError && $error !== currentError) {
-			clearTimeout(errorToastTimeout);
-			currentError = undefined;
-			await new Promise((resolve) => setTimeout(resolve, 300));
-		}
+    //     try {
+    //         // 1. Get file list
+    //         const filesResponse = await axios.get(`${apiBase}/files`, {
+    //             headers: {
+    //                 Authorization: `Bearer ${token}`,
+    //             },
+    //         });
 
-		currentError = $error;
+    //         const fileMetas: { file_id: string; name: string }[] = filesResponse.data.files;
 
-		if (currentError === "Model is overloaded") {
-			overloadedModalOpen = true;
-		}
-		errorToastTimeout = setTimeout(() => {
-			$error = undefined;
-			currentError = undefined;
-		}, 10000);
-	}
+    //         // 2. Get messages for each file_id
+    //         conversations = await Promise.all(
+    //             fileMetas.map(async (fileMeta) => {
+    //                 try {
+    //                     const messagesResponse = await axios.get(`${apiBase}/history/${fileMeta.file_id}`, {
+    //                         headers: {
+    //                             Authorization: `Bearer ${token}`,
+    //                         },
+    //                     });
+    //                     return {
+    //                         file: fileMeta,
+    //                         messages: messagesResponse.data,
+    //                     };
+    //                 } catch (err) {
+    //                     console.error(`Failed to load messages for file ${fileMeta.file_id}`, err);
+    //                     return {
+    //                         file: fileMeta,
+    //                         messages: [],
+    //                     };
+    //                 }
+    //             })
+    //         );
+             
+            
+    //     } catch (error) {
+    //         console.error("Error while loading conversations", error);
+    //     }
+    // });
 
-	async function deleteConversation(id: string) {
-		try {
-			const res = await fetch(`${base}/conversation/${id}`, {
-				method: "DELETE",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
+	// async function onError() {
+	// 	// If a new different error comes, wait for the current error to hide first
+	// 	if ($error && currentError && $error !== currentError) {
+	// 		clearTimeout(errorToastTimeout);
+	// 		currentError = undefined;
+	// 		await new Promise((resolve) => setTimeout(resolve, 300));
+	// 	}
 
-			if (!res.ok) {
-				$error = "Error while deleting conversation, try again.";
-				return;
-			}
+	// 	currentError = $error;
 
-			conversations = conversations.filter((conv) => conv.id !== id);
+	// 	if (currentError === "Model is overloaded") {
+	// 		overloadedModalOpen = true;
+	// 	}
+	// 	errorToastTimeout = setTimeout(() => {
+	// 		$error = undefined;
+	// 		currentError = undefined;
+	// 	}, 10000);
+	// }
 
-			if ($page.params.id === id) {
-				await goto(`${base}/`, { invalidateAll: true });
-			}
-		} catch (err) {
-			console.error(err);
-			$error = String(err);
-		}
-	}
+	// async function deleteConversation(id: string) {
+	// 	try {
+	// 		const res = await fetch(`${base}/conversation/${id}`, {
+	// 			method: "DELETE",
+	// 			headers: {
+	// 				"Content-Type": "application/json",
+	// 			},
+	// 		});
 
-	async function editConversationTitle(id: string, title: string) {
-		try {
-			const res = await fetch(`${base}/conversation/${id}`, {
-				method: "PATCH",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ title }),
-			});
+	// 		if (!res.ok) {
+	// 			$error = "Error while deleting conversation, try again.";
+	// 			return;
+	// 		}
 
-			if (!res.ok) {
-				$error = "Error while editing title, try again.";
-				return;
-			}
+	// 		conversations = conversations.filter((conv) => conv.file.file_id !== id);
 
-			conversations = conversations.map((conv) => (conv.id === id ? { ...conv, title } : conv));
-		} catch (err) {
-			console.error(err);
-			$error = String(err);
-		}
-	}
+	// 		if ($page.params.id === id) {
+	// 			await goto(`${base}/`, { invalidateAll: true });
+	// 		}
+	// 	} catch (err) {
+	// 		console.error(err);
+	// 		$error = String(err);
+	// 	}
+	// }
 
-	onDestroy(() => {
-		clearTimeout(errorToastTimeout);
-	});
+	// onDestroy(() => {
+	// 	clearTimeout(errorToastTimeout);
+	// });
 
-	run(() => {
-		if ($error) onError();
-	});
+	// run(() => {
+	// 	if ($error) onError();
+	// });
 
-	run(() => {
-		if ($titleUpdate) {
-			const convIdx = conversations.findIndex(({ id }) => id === $titleUpdate?.convId);
 
-			if (convIdx != -1) {
-				conversations[convIdx].title = $titleUpdate?.title ?? conversations[convIdx].title;
-			}
-
-			$titleUpdate = null;
-		}
-	});
-
-	const settings = createSettingsStore(data.settings);
-
-	onMount(async () => {
-		if ($page.url.searchParams.has("model")) {
-			await settings
-				.instantSet({
-					activeModel: $page.url.searchParams.get("model") ?? $settings.activeModel,
-				})
-				.then(async () => {
-					const query = new URLSearchParams($page.url.searchParams.toString());
-					query.delete("model");
-					await goto(`${base}/?${query.toString()}`, {
-						invalidateAll: true,
-					});
-				});
-		}
-
-		if ($page.url.searchParams.has("tools")) {
-			const tools = $page.url.searchParams.get("tools")?.split(",");
-
-			await settings
-				.instantSet({
-					tools: [...($settings.tools ?? []), ...(tools ?? [])],
-				})
-				.then(async () => {
-					const query = new URLSearchParams($page.url.searchParams.toString());
-					query.delete("tools");
-					await goto(`${base}/?${query.toString()}`, {
-						invalidateAll: true,
-					});
-				});
-		}
-	});
-
-	let mobileNavTitle = $derived(
-		["/models", "/assistants", "/privacy", "/tools"].includes($page.route.id ?? "")
-			? ""
-			: conversations.find((conv) => conv.id === $page.params.id)?.title
-	);
-
-	let showDisclaimer = $derived(
-		!$settings.ethicsModalAccepted &&
-			$page.url.pathname !== `${base}/privacy` &&
-			envPublic.PUBLIC_APP_DISCLAIMER === "1" &&
-			!($page.data.shared === true)
-	);
+	// let mobileNavTitle = $derived(
+	// 	["/models", "/assistants", "/privacy", "/tools"].includes($page.route.id ?? "")
+	// 		? ""
+	// 		: conversations.find((conv) => conv.file.file_id === $page.params.id)?.file.name
+	// );
 </script>
 
 <svelte:head>
@@ -232,10 +209,6 @@
 	{/if}
 </svelte:head>
 
-{#if showDisclaimer}
-	<DisclaimerModal on:close={() => ($settings.ethicsModalAccepted = true)} />
-{/if}
-
 {#if $loginModalOpen}
 	<LoginModal
 		on:close={() => {
@@ -244,9 +217,9 @@
 	/>
 {/if}
 
-{#if overloadedModalOpen && isHuggingChat}
+<!-- {#if overloadedModalOpen && isHuggingChat}
 	<OverloadedModal onClose={() => (overloadedModalOpen = false)} />
-{/if}
+{/if} -->
 <div class="w-screen h-full flex">
     <div class="w-2/3 h-screen">
         <PdfReader/>
@@ -256,16 +229,8 @@
     <div
         class="grid h-full w-1/3 right-0 grid-cols-1 grid-rows-[auto,1fr] overflow-hidden text-smd dark:text-gray-300 md:grid-rows-[1fr]"
     >
-        {@render children?.()}
-        <ExpandNavigation
-            isCollapsed={isNavCollapsed}
-            onClick={() => (isNavCollapsed = !isNavCollapsed)}
-            classNames="absolute inset-y-0 z-10 my-auto {!isNavCollapsed
-                ? 'right-[290px]'
-                : 'right-0'} *:transition-transform"
-        />
-
-        <MobileNav isOpen={isNavOpen} on:toggle={(ev) => (isNavOpen = ev.detail)} title={mobileNavTitle}>
+        <slot></slot>
+        <!-- <MobileNav isOpen={isNavOpen} on:toggle={(ev) => (isNavOpen = ev.detail)} title={mobileNavTitle}>
             <NavMenu
                 {conversations}
                 user={data.user}
@@ -288,10 +253,10 @@
                 on:deleteConversation={(ev) => deleteConversation(ev.detail)}
                 on:editConversationTitle={(ev) => editConversationTitle(ev.detail.id, ev.detail.title)}
             />
-        </nav>
-        {#if currentError}
+        </nav> -->
+        <!-- {#if currentError}
             <Toast message={currentError} />
-        {/if}
+        {/if} -->
     </div>
 
 </div>

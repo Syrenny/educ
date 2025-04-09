@@ -61,7 +61,8 @@ def init_db():
     return session_factory
 
 
-SessionLocal = init_db()
+if settings.env != "TEST":
+    SessionLocal = init_db()
 
 
 @contextmanager
