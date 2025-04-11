@@ -1,0 +1,32 @@
+[project]
+name = "educ"
+version = "0.1.0"
+description = "Description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "bcrypt>=4.3.0",
+    "fastapi>=0.115.8",
+    "huggingface-hub>=0.30.2",
+    "langchain>=0.3.19",
+    "langchain-community>=0.3.18",
+    "langchain-huggingface>=0.1.2",
+    "langchain-openai>=0.3.7",
+    "loguru>=0.7.3",
+    "openai>=1.63.2",
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.7.1",
+    "pydantic[email]>=2.10.6",
+    "pyjwt>=2.10.1",
+    "pymupdf>=1.25.4",
+    "pypdf2>=3.0.1",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.20",
+    "smolagents>=1.9.2",
+    "sqlalchemy>=2.0.38",
+    "testcontainers[postgresql]>=4.10.0",
+    "torch>=2.6.0",
+    "typer>=0.15.2",
+    "uvicorn>=0.34.0",
+    "vllm>=0.8.3",
+]

@@ -1,5 +1,3 @@
-import os
-
 from pathlib import Path
 
 from pydantic.types import SecretStr
@@ -61,14 +59,5 @@ class Settings(BaseSettings):
     
     # Chunker
     chunker_name: str
-    
-    
-class TestSettings(Settings):
-    model_config = SettingsConfigDict(
-        env_file=".env.test", env_file_encoding="utf-8")
 
-
-if os.getenv("MODE", "DEFAULT") == "TEST":
-    settings = TestSettings()
-else:
-    settings = Settings()
+settings = Settings()

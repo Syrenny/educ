@@ -1,6 +1,4 @@
-.env.test
 cache/
-local.db
 benchmark/data
 __pycache__
 .venv

@@ -4,6 +4,7 @@ services:
     build: 
       context: ..
       dockerfile: ./docker/Dockerfile
+    runtime: nvidia
     ports:
       - 8000:8000
     environment:
@@ -13,6 +14,19 @@ services:
         condition: service_healthy
     networks:
       - postgres
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /workspace
+          # Exclude the project virtual environment — it could be for a
+          # different platform in the container
+          ignore:
+            - .venv/
+
+        # Rebuild the image if dependencies change by checking uv.lock
+        - action: rebuild
+          path: ./uv.lock
 
   postgres:
     container_name: educ_pg
