@@ -1,22 +1,22 @@
+import React from 'react'
+
 interface FileListProps {
-	files: any[]
+	files: { filename: string; file_id: string }[]
 	onSelectFile: (fileId: string) => void
 }
 
-const FileList = ({ files, onSelectFile }: FileListProps) => {
+const FileList: React.FC<FileListProps> = ({ files, onSelectFile }) => {
 	return (
-		<div className='w-1/4 p-4'>
-			<ul>
-				{files.map(file => (
-					<li
-						key={file.file_id}
-						onClick={() => onSelectFile(file.file_id)}
-						className='cursor-pointer'
-					>
-						{file.filename}
-					</li>
-				))}
-			</ul>
+		<div>
+			{files.map(file => (
+				<div
+					key={file.file_id}
+					onClick={() => onSelectFile(file.file_id)}
+					style={{ cursor: 'pointer', marginBottom: '10px' }}
+				>
+					{file.filename}
+				</div>
+			))}
 		</div>
 	)
 }

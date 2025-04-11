@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     sqlite_db_path: str
     
     sqlalchemy_url: str
+    test_sqlalchemy_url: str
     
     # Chunker
     chunker_name: str

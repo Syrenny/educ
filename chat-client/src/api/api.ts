@@ -2,7 +2,13 @@ import axios from 'axios'
 import apiClient from '../utils/axios'
 
 export const loginUser = async (email: string, password: string) => {
-	const response = await apiClient.post('/login_user', { email, password })
+	const response = await apiClient.post(
+        '/login_user', 
+        { 
+            "email": email, 
+            "password": password 
+        }
+    )
 	return response.data
 }
 
@@ -16,14 +22,20 @@ export const fetchCurrentUser = async (): Promise<any> => {
 	return response.data
 }
 
-export const uploadFile = async (file: File) => {
+export const uploadFile = async (files: File[]) => {
 	const formData = new FormData()
-	formData.append('file', file)
-	const response = await apiClient.post('/files', formData, {
-		headers: {
-			'Content-Type': 'multipart/form-data',
-		},
+	files.forEach(file => {
+		formData.append('files', file)
 	})
+	const response = await apiClient.post(
+        '/files', 
+        formData, 
+        {
+		    headers: {
+			    'Content-Type': 'multipart/form-data',
+		    },
+	    }
+    )
 	return response.data
 }
 

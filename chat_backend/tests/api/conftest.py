@@ -18,14 +18,14 @@ def valid_pdf() -> bytes:
 def client(db_session):
     session, _ = db_session
     
-    def override_get_db():
+    async def override_get_db():
         try:
             yield session
-        except Exception as e:
-            session.rollback()
+        except Exception:
+            await session.rollback()
             raise
         finally:
-            session.close()
+            await session.close()
             
     app.dependency_overrides[get_db] = override_get_db
 

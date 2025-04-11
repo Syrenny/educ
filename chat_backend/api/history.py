@@ -7,7 +7,7 @@ from chat_backend.security import get_user_id
 from chat_backend.settings import settings
 from chat_backend.exceptions import *
 from chat_backend.database import (
-    Session,
+    AsyncSession,
     get_db,
     get_messages
 )
@@ -23,9 +23,9 @@ router = APIRouter()
 async def history(
     file_id: UUID,
     user_id: UUID = Depends(get_user_id),
-    session: Session = Depends(get_db)
+    session: AsyncSession = Depends(get_db)
 ) -> list[Message]:
-    db_messages = get_messages(
+    db_messages = await get_messages(
         session=session,
         user_id=user_id,
         file_id=file_id

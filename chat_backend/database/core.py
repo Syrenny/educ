@@ -1,89 +1,116 @@
-from contextlib import contextmanager
+
+import asyncio
+import contextlib
 
 import sqlalchemy as db
-from sqlalchemy.orm import Session, sessionmaker
+from typing import AsyncIterator
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine, create_async_engine
 
-from chat_backend.security import UserModel, hash_password
+from chat_backend.security import UserModel, hash_password, generate_access_token
 from chat_backend.settings import settings
 from .models import Base
-from .crud import create_user, get_user_by_email
+from .crud import create_user, get_user_by_email, create_token
 
 
-def create_default_user(session: Session) -> None:
-    """Creates a default admin user."""
-    user = UserModel(
-        email=settings.default_admin_email.get_secret_value(),
-        password=settings.default_admin_password.get_secret_value()
-    )
-    create_user(
-        session,
-        email=user.email,
-        password=hash_password(user.password)
-    )
+class NotInitializedError(Exception):
+    """Raised when database session manager is used before initialization."""
 
 
-def init_db():
-    engine = db.create_engine(
-        settings.sqlalchemy_url, 
-        pool_pre_ping=True
-    )
-    
-    with engine.connect() as conn:
-        conn.execution_options(isolation_level="AUTOCOMMIT").execute(
-            db.text("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+# Reference: https://dev.to/akarshan/asynchronous-database-sessions-in-fastapi-with-sqlalchemy-1o7e
+class DatabaseSessionManager:
+    def __init__(self):
+        self._engine: AsyncEngine | None = None
+        self._sessionmaker: async_sessionmaker | None = None
+        
+    @property
+    def engine(self) -> AsyncEngine:
+        if self._engine is None:
+            raise NotInitializedError("Engine is not initialized.")
+        return self._engine
+
+    @property
+    def sessionmaker(self) -> async_sessionmaker[AsyncSession]:
+        if self._sessionmaker is None:
+            raise NotInitializedError("Sessionmaker is not initialized.")
+        return self._sessionmaker
+
+    async def init_db(self, url):
+        self._engine = create_async_engine(
+            url,
+            pool_pre_ping=True,
         )
-
-    Base.metadata.create_all(engine)
-    
-    with engine.connect() as connection:
-        connection.execute(
-            db.text(
-                'CREATE INDEX IF NOT EXISTS chunk_idx ON chunks USING GIN (chunk_text gin_trgm_ops);')
+        self._sessionmaker = async_sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=self.engine,
+            expire_on_commit=False,
+            class_=AsyncSession
         )
+        
+        await self.__create_schema()
 
-    session_factory = sessionmaker(
-        autocommit=False, 
-        autoflush=False, 
-        bind=engine
-    )
-
-    if settings.env in ["DEBUG", "TEST"]:
-        session = session_factory()
+        if settings.env in ["DEBUG", "TEST"]:
+            await self.__create_default_user()
+                
+    async def __create_schema(self):
+        async with self.engine.connect() as conn:
+            await conn.execution_options(isolation_level="AUTOCOMMIT").execute(db.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(
+                db.text(
+                    'CREATE INDEX IF NOT EXISTS chunk_idx ON chunks USING GIN (chunk_text gin_trgm_ops);')
+            )
+            
+    async def __create_default_user(self):
+        user = UserModel(
+            email=settings.default_admin_email.get_secret_value(),
+            password=settings.default_admin_password.get_secret_value()
+        )
+        async with self.sessionmaker() as session:
+            user = await get_user_by_email(
+                session, 
+                email=settings.default_admin_email.get_secret_value()
+            )
+            if user is None:
+                db_user = await create_user(
+                    session,
+                    email=user.email,
+                    password=hash_password(user.password)
+                )
+                session.flush()
+                token = generate_access_token(db_user)
+                await create_token(
+                    session=session,
+                    user_id=db_user.id,
+                    token=token
+                )
+                await session.commit()
+    
+    async def close(self):
+        if self._engine is not None:
+            await self.engine.dispose()
+            self._engine = None
+            self._sessionmaker = None
+    
+    
+    @contextlib.asynccontextmanager
+    async def session(self) -> AsyncIterator[AsyncSession]:
+        session = self.sessionmaker()
         try:
-            if get_user_by_email(
-                session, email=settings.default_admin_email.get_secret_value()
-            ) is None:
-                create_default_user(session)
-                session.commit()
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
         finally:
-            session.close()
+            await session.close()
+        
 
-    return session_factory
+session_manager = DatabaseSessionManager()
+    
+if not settings.env in ["TEST"]:
+    asyncio.run(session_manager.init_db())
+    
 
-
-if settings.env != "TEST":
-    SessionLocal = init_db()
-
-
-@contextmanager
-def get_db_session():
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-
-def get_db():
-    session = SessionLocal()
-    try:
-        yield session
-    except Exception as e:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+async def get_db() -> AsyncIterator[AsyncSession]:
+    async with session_manager.session() as session:
+            yield session

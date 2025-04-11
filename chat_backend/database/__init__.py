@@ -1,8 +1,7 @@
 from .core import (
-    init_db, 
     get_db, 
-    get_db_session,
-    Session
+    AsyncSession,
+    session_manager
 )
 from .crud import (
     list_file_meta,
@@ -14,10 +13,10 @@ from .crud import (
     get_user_by_email,
     save_file_chunks,
     find_file_chunks,
-    delete_file_meta,
     set_indexed,
     is_indexed,
     get_messages,
-    add_message
+    add_message,
+    get_user_by_id
 )
 from .models import Base

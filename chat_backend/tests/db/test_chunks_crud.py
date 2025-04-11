@@ -1,3 +1,5 @@
+import pytest
+
 from chat_backend.database.crud import (
     save_file_chunks,
     find_file_chunks,
@@ -6,13 +8,14 @@ from chat_backend.database.crud import (
 )
 
 
-def test_save_file_chunks(test_chunks_session):
+@pytest.mark.asyncio
+async def test_save_file_chunks(test_chunks_session):
     session, user_id, file_meta = test_chunks_session
     
     assert user_id is not None
     
     chunks = ["first", "second", "third"]
-    save_file_chunks(session, user_id, file_meta, chunks)
+    await save_file_chunks(session, user_id, file_meta, chunks)
 
     results = session.query(DBChunk).filter_by(user_id=user_id).all()
     
@@ -20,30 +23,32 @@ def test_save_file_chunks(test_chunks_session):
     assert all(r.file_id == file_meta.file_id for r in results)
 
 
-def test_find_file_chunks(test_chunks_session):
+@pytest.mark.asyncio
+async def test_find_file_chunks(test_chunks_session):
     session, user_id, file_meta = test_chunks_session
 
     assert user_id is not None
 
     chunks = ["find me please", "just noise", "also find me"]
-    save_file_chunks(session, user_id, file_meta, chunks)
+    await save_file_chunks(session, user_id, file_meta, chunks)
     session.commit()
 
-    results = find_file_chunks(session, "find", user_id, file_meta.file_id)
+    results = await find_file_chunks(session, "find", user_id, file_meta.file_id)
     assert len(results) == 2
     assert all("find" in r.chunk_text for r in results)
 
 
-def test_delete_file_chunks(test_chunks_session):
+@pytest.mark.asyncio
+async def test_delete_file_chunks(test_chunks_session):
     session, user_id, file_meta = test_chunks_session
 
     assert user_id is not None
 
     chunks = ["to be deleted", "also gone"]
-    save_file_chunks(session, user_id, file_meta, chunks)
+    await save_file_chunks(session, user_id, file_meta, chunks)
     session.commit()
 
-    delete_file_chunks(session, user_id,
+    await delete_file_chunks(session, user_id,
                        file_meta.filename, file_meta.file_id)
     session.commit()
 

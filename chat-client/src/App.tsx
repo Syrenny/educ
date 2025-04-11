@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import PrivateRoute from './components/Privateroute'
+import PrivateRoute from './components/PrivateRoute'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import Home from './pages/Home'

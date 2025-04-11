@@ -1,11 +1,12 @@
 import json
 from uuid import UUID
 from io import BytesIO
-from typing import Iterator
+from typing import AsyncIterator
 from abc import ABC, abstractmethod
 from pathlib import Path
 
 import fitz
+import aiofiles
 from fastapi import UploadFile
 
 from chat_backend.exceptions import *
@@ -15,23 +16,23 @@ from chat_backend.models import *
 
 class FileStorage(ABC):
     @abstractmethod
-    def read(self, meta: FileMeta):
+    async def read(self, meta: FileMeta):
         pass
     
     @abstractmethod
-    def write(self, file: FileModel):
+    async def write(self, file: FileModel):
         pass
     
     @abstractmethod
-    def delete(self, meta: FileMeta):
+    async def delete(self, meta: FileMeta):
         pass
     
     @abstractmethod
-    def exists(self, meta: FileMeta):
+    async def exists(self, meta: FileMeta):
         pass
     
     @abstractmethod
-    def list(self, user_id: UUID):
+    async def list(self, user_id: UUID):
         pass
     
     
@@ -46,13 +47,13 @@ class LocalFileStorage(FileStorage):
             f"{file_id}.pdf"
         )
         
-    def read(self, user_id: UUID, meta: FileMeta) -> FileModel | None:
+    async def read(self, user_id: UUID, meta: FileMeta) -> FileModel | None:
         """Read the file content if it exists."""
-        file_path = self.exists(user_id, meta)
+        file_path = await self.exists(user_id, meta)
 
         if file_path:
-            with open(file_path, "rb") as f:
-                file_data = f.read()
+            async with aiofiles.open(file_path, "rb") as f:
+                file_data = await f.read()
 
             return FileModel(
                 meta=meta,
@@ -61,7 +62,7 @@ class LocalFileStorage(FileStorage):
             
         return None
 
-    def write(self, user_id: UUID, model: FileModel) -> Path:
+    async def write(self, user_id: UUID, model: FileModel) -> Path:
         """Write a file to the storage."""
         file_path = self._make_path(
             file_id=model.meta.file_id,
@@ -70,12 +71,12 @@ class LocalFileStorage(FileStorage):
 
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(file_path, "wb") as f:
-            f.write(model.file)
+        async with aiofiles.open(file_path, "wb") as f:
+            await f.write(model.file)
 
         return file_path
 
-    def delete(self, user_id: UUID, meta: FileMeta) -> bool:
+    async def delete(self, user_id: UUID, meta: FileMeta) -> bool:
         """Delete a file if it exists.""" 
         file_path = self._make_path(
             file_id=meta.file_id,
@@ -88,7 +89,7 @@ class LocalFileStorage(FileStorage):
         else:
             return False
 
-    def exists(self, user_id: UUID, meta: FileMeta) -> Path | None:
+    async def exists(self, user_id: UUID, meta: FileMeta) -> Path | None:
         """Check if a file exists."""
         file_path = self._make_path(
             file_id=meta.file_id,
@@ -100,7 +101,7 @@ class LocalFileStorage(FileStorage):
         
         return None
     
-    def list(self, user_id: UUID) -> list[str]:
+    async def list(self, user_id: UUID) -> list[str]:
         """List all files for a given user_id."""
         user_dir = self._make_path(
             file_id="123",
@@ -120,11 +121,11 @@ class FileReader:
         if file.content_type not in self.allowed_mime_types:
             raise InvalidFileTypeException(file.filename)
             
-    def read(self, files: list[UploadFile]) -> Iterator[bytes]:
+    async def read(self, files: list[UploadFile]) -> AsyncIterator[bytes]:
         for file in files:
             self._validate_before(file)
             
-            content = file.file.read()
+            content = await file.file.read()
             
             try:
                 doc = fitz.open(
@@ -139,7 +140,7 @@ class FileReader:
         
             yield content
         
-    def __call__(self, files: list[UploadFile]) -> list[bytes]:
-        return [content for content in self.read(files)]
+    async def __call__(self, files: list[UploadFile]) -> list[bytes]:
+        return [content async for content in self.read(files)]
             
         

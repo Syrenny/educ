@@ -3,15 +3,17 @@ from functools import lru_cache
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_openai import ChatOpenAI
 from langchain_community.cache import SQLiteCache
 from langchain_core.rate_limiters import InMemoryRateLimiter
 
-from chat_backend.api.auth import router as auth_router
 from chat_backend.settings import settings
+from chat_backend.database import session_manager
+from chat_backend.api.auth import router as auth_router
 from chat_backend.api.files import router as files_router
+from chat_backend.api.history import router as history_router
 from chat_backend.api.completions import router as completions_router
-from chat_backend.api.history import router as history_router 
 
     
 @lru_cache(maxsize=None)
@@ -36,9 +38,18 @@ def get_langchain_openai_instance():
 async def lifespan(app: FastAPI):
     app.state.langchain_openai_client = get_langchain_openai_instance()
     yield
+    await session_manager.close()
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(completions_router)
 app.include_router(files_router)

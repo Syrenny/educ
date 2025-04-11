@@ -1,13 +1,18 @@
-const TOKEN_KEY = 'auth_token'
+const EDUC_USER = 'educ_user'
 
-export const setAuthToken = (token: string) => {
-	localStorage.setItem(TOKEN_KEY, token)
+export const setUser = (email: string, token: string) => {
+	const user = {
+		email,
+		token,
+	}
+	localStorage.setItem(EDUC_USER, JSON.stringify(user))
 }
 
-export const getAuthToken = (): string | null => {
-	return localStorage.getItem(TOKEN_KEY)
+export const getUser = () => {
+	const user = localStorage.getItem(EDUC_USER)
+	return user ? JSON.parse(user) : null
 }
 
-export const removeAuthToken = () => {
-	localStorage.removeItem(TOKEN_KEY)
+export const removeUser = () => {
+	localStorage.removeItem(EDUC_USER)
 }

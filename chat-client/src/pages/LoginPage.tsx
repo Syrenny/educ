@@ -1,30 +1,34 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const LoginPage = () => {
 	const { login } = useAuth()
-	const [email, setEmail] = useState('')
-	const [password, setPassword] = useState('')
+	const [email, setEmail] = useState('adm@adm.ru')
+	const [password, setPassword] = useState('123')
 	const [error, setError] = useState<string | null>(null)
-	const [loading, setLoading] = useState(false)
+
+	const navigate = useNavigate()
+	const location = useLocation()
+	const from = (location.state as any)?.from?.pathname || '/'
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setError(null)
-		setLoading(true)
 
 		try {
 			await login(email, password)
+			navigate(from, { replace: true })
 		} catch (err: any) {
-			if (err.response?.data?.detail) {
+			console.error(err)
+			if (err.response && err.response.data?.detail) {
 				setError(err.response.data.detail)
 			} else {
-				setError('Login failed. Please check your credentials.')
+				setError('Login failed. Try again.')
 			}
-		} finally {
-			setLoading(false)
 		}
 	}
+
 
 	return (
 		<form onSubmit={handleSubmit}>
@@ -43,9 +47,7 @@ const LoginPage = () => {
 				placeholder='Password'
 				required
 			/>
-			<button type='submit' disabled={loading}>
-				{loading ? 'Logging in...' : 'Login'}
-			</button>
+			<button type='submit'>Login</button>
 		</form>
 	)
 }

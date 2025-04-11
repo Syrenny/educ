@@ -11,7 +11,7 @@ from chat_backend.security import get_user_id
 from chat_backend.settings import settings
 from chat_backend.exceptions import *
 from chat_backend.database import (
-    Session,
+    AsyncSession,
     get_db,
     add_file_meta, 
     delete_file_meta,
@@ -35,7 +35,7 @@ async def add_file(
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
     user_id: UUID = Depends(get_user_id),
-    session: Session = Depends(get_db)
+    session: AsyncSession = Depends(get_db)
 ) -> list[FileMeta]:
     """Upload a file and store it."""
     
@@ -49,7 +49,7 @@ async def add_file(
     files_meta = []
     try:
         for content, upload_file in zip(contents, files):
-            db_meta = add_file_meta(
+            db_meta = await add_file_meta(
                 session,
                 user_id,
                 upload_file.filename
@@ -93,9 +93,9 @@ async def add_file(
 async def get_indexing_status(
     file_id: UUID, 
     user_id: UUID = Depends(get_user_id),
-    session: Session = Depends(get_db)
+    session: AsyncSession = Depends(get_db)
     ) -> bool:
-    status = is_indexed(
+    status = await is_indexed(
         session=session,
         user_id=user_id,
         file_id=file_id
@@ -113,11 +113,11 @@ async def get_indexing_status(
 async def delete_file(
     file_id: UUID,
     user_id: UUID = Depends(get_user_id),
-    session: Session = Depends(get_db)
+    session: AsyncSession = Depends(get_db)
 ) -> bool:
     """Delete a file if it exists."""
     try:
-        db_file = delete_file_meta(
+        db_file = await delete_file_meta(
             session,
             user_id,
             file_id
@@ -148,10 +148,10 @@ async def delete_file(
 async def download_file(
     file_id: UUID,
     user_id: UUID = Depends(get_user_id),
-    session: Session = Depends(get_db)
+    session: AsyncSession = Depends(get_db)
 ) -> StreamingResponse:
     """Return the file contents."""
-    if not (db_file := find_file_meta(session, user_id, file_id)):
+    if not (db_file := await find_file_meta(session, user_id, file_id)):
         raise FileNotFoundException()
     
     file_model = storage.read(
@@ -178,11 +178,11 @@ async def download_file(
 )
 async def list_files(
     user_id: UUID = Depends(get_user_id),
-    session: Session = Depends(get_db)
+    session: AsyncSession = Depends(get_db)
 ) -> list[FileMeta]:
     files_meta = []
     for file_id in storage.list(user_id):
-        if db_meta := find_file_meta(session, user_id, file_id):
+        if db_meta := await find_file_meta(session, user_id, file_id):
             files_meta.append(FileMeta(
                 file_id=db_meta.file_id,
                 filename=db_meta.filename

@@ -1,3 +1,5 @@
+import pytest
+
 from chat_backend.settings import settings
 from chat_backend.database import get_user_by_email, get_db
 
@@ -106,13 +108,15 @@ def test_login_user_invalid_password(client):
     assert response.json() == {"detail": "Неправильный email или пароль"}
 
 
-def test_password_hashing(client):
+@pytest.mark.asyncio
+async def test_password_hashing(db_session):
+    session, _ = await db_session
     user_data = {
         "email": settings.default_admin_email.get_secret_value(),
         "password": settings.default_admin_password.get_secret_value()
     }
     session = next(get_db())
-    db_user = get_user_by_email(session, user_data["email"])
+    db_user = await get_user_by_email(session, user_data["email"])
     
     assert db_user.password != user_data["password"]
     
