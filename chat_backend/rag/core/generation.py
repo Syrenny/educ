@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import AsyncGenerator
 
 from ..utils.llm import get_langchain_llm
 
@@ -13,18 +13,18 @@ class Generator:
     def __init__(self):
         self.llm = get_langchain_llm()
 
-    def __generate_stream(self,
+    async def __generate_stream(self,
                   query: str,
                   context: list[str]
-                  ) -> str:
+                  ) -> AsyncGenerator[str, None]:
         prompt = self.prompt_template.format(
             query=query, documents='\n'.join(context))
 
-        return self.llm.stream(prompt)
+        async for ai_message in self.llm.astream(prompt):
+            yield ai_message.text()
 
     def __call__(self,
-                 query: str,
-                 context: list[str]
-                 ) -> Iterator[str]:
-        for chunk in self.__generate_stream(query, context):
-            yield chunk.text()
+                query: str,
+                context: list[str]
+                ) -> AsyncGenerator[str, None]:
+        return self.__generate_stream(query, context)

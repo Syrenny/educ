@@ -5,7 +5,7 @@ import React, {
 	useEffect,
 	ReactNode,
 } from 'react'
-import { loginUser, registerUser, fetchCurrentUser } from '../api/api'
+import { loginUser, registerUser } from '../api/api'
 import { setUser, getUser, removeUser } from '../utils/auth'
 
 interface User {
@@ -14,7 +14,7 @@ interface User {
 }
 
 interface AuthContextType {
-	user: User | null
+	user: User | null | undefined
 	login: (email: string, password: string) => Promise<void>
 	register: (email: string, password: string) => Promise<void>
 	logout: () => void
@@ -23,11 +23,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-	const [user, setUserState] = useState<User | null>(null)
+	const [user, setUserState] = useState<User | null | undefined>(undefined)
 
 	useEffect(() => {
 		const init = async () => {
 			const localUser = getUser()
+            console.log("Reserved user: ", localUser)
 			if (localUser) {
 				try {
 					setUserState(localUser)

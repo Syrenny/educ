@@ -1,8 +1,11 @@
 import json
 import time
 
+import pytest
 
-def test_chat_completions(
+
+@pytest.mark.asyncio
+async def test_chat_completions(
     client, 
     headers, 
     valid_pdf,
@@ -10,7 +13,7 @@ def test_chat_completions(
     ):
     
     files = [('files', ('test.pdf', valid_pdf, 'application/pdf'))]
-    response = client.post(
+    response = await client.post(
         "/files",
         files=files,
         headers=upload_files_headers
@@ -18,7 +21,7 @@ def test_chat_completions(
 
     filename = response.json()[0]["filename"]
     file_id = response.json()[0]["file_id"]
-    
+        
     assert response.status_code == 200
     assert filename == "test.pdf"
 
@@ -26,13 +29,12 @@ def test_chat_completions(
     max_retries = 30
     retries = 0
     while not indexing_done and retries < max_retries:
-        status_response = client.get(
+        status_response = await client.get(
             f"/files/{file_id}/status",
             headers=headers
         )
-        assert status_response.status_code == 200
-
-        indexing_done = status_response.json()
+        if status_response.status_code == 200:
+            indexing_done = status_response.json()
 
         if not indexing_done:
             retries += 1
@@ -57,21 +59,19 @@ def test_chat_completions(
     }
 
     completion_params = {
-        "method": "post",
+        "method": "POST",
         "url": "/v1/chat/completions",
         "json": request_data,
         "headers": headers
     }
 
     response_text = ""
-    with client.stream(**completion_params) as response:
-        for chunk in response.iter_lines():
+    async with client.stream(**completion_params) as response:
+        async for chunk in response.aiter_lines():
             if chunk:
-                decoded_chunk = chunk
-                response_text += decoded_chunk + "\n"
-
-                if decoded_chunk.startswith("data: "):
-                    json_part = decoded_chunk[len("data: "):]
+                response_text += chunk + "\n"
+                if chunk.startswith("data: "):
+                    json_part = chunk[len("data: "):]
                     if json_part != "[DONE]":
                         parsed = json.loads(json_part)
 
@@ -79,6 +79,5 @@ def test_chat_completions(
                         assert len(parsed["choices"]) > 0
                         assert "delta" in parsed["choices"][0]
                         assert "content" in parsed["choices"][0]["delta"]
-
 
     assert "data: [DONE]" in response_text

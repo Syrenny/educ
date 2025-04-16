@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Iterator
+from typing import AsyncGenerator
 
 from .utils.pdf import read_pdf
 from .core.retrieval import Reranker
@@ -37,7 +37,7 @@ async def index_document(
         user_id=user_id,
         file_id=meta.file_id,
     )
-    session.commit()
+    await session.commit()
     
 
 async def retrieve(
@@ -59,10 +59,10 @@ async def retrieve(
     return reranker(query, retrieved)
 
 
-async def generate(
+def generate(
     query: str,
     context: list[str]
-    ) -> Iterator[str]:
+    ) -> AsyncGenerator[str, None]:
     generator = Generator()
     
     return generator(query, context)

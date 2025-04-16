@@ -1,4 +1,3 @@
-import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -33,7 +32,9 @@ async def create_chat_completion(
         file_id=file_id
     )
     try:
-        for chunk in await generate(query, context):
+        async for chunk in generate(query, context):
+            full_message += chunk + " "
+            
             chunk = ChatCompletionStreamResponse(
                 model="null",
                 choices=[
@@ -44,12 +45,12 @@ async def create_chat_completion(
                     )
                 ]
             )
-            chunk = chunk.model_dump_json(exclude_unset=True, exclude_none=True)
+            json_chunk = chunk.model_dump_json(
+                exclude_unset=True, 
+                exclude_none=True
+            )
             
-            full_message += chunk + " "
-            
-            yield f"data: {chunk}\n\n"
-            await asyncio.sleep(0.1)
+            yield f"data: {json_chunk}\n\n"
     finally:
         await add_message(
             session=session,
@@ -89,10 +90,12 @@ async def chat_completions(
     
     generator = create_chat_completion(
         session=session,
-        request=request, 
         user_id=user_id, 
         file_id=file_id,
         query=query
     )
     
-    return StreamingResponse(content=generator, media_type="text/event-stream")
+    return StreamingResponse(
+        content=generator, 
+        media_type="text/event-stream"
+    )

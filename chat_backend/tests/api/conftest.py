@@ -1,7 +1,7 @@
 import shutil
 
 import pytest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 
 from chat_backend.main import app
 from chat_backend.database import get_db
@@ -15,7 +15,7 @@ def valid_pdf() -> bytes:
     
 
 @pytest.fixture
-def client(db_session):
+async def client(db_session):
     session, _ = db_session
     
     async def override_get_db():
@@ -29,19 +29,22 @@ def client(db_session):
             
     app.dependency_overrides[get_db] = override_get_db
 
-    with TestClient(app) as client:
-        yield client
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test"
+        ) as ac:
+        yield ac
         
     app.dependency_overrides.clear()
     
     
 @pytest.fixture
-def headers(client):
+async def headers(client):
     user_data = {
         "email": settings.default_admin_email.get_secret_value(),
         "password": settings.default_admin_password.get_secret_value()
     }
-    response = client.post("/login_user", json=user_data)
+    response = await client.post("/login_user", json=user_data)
     response_data = response.json()
 
     return {
@@ -51,12 +54,12 @@ def headers(client):
     
 
 @pytest.fixture
-def upload_files_headers(client):
+async def upload_files_headers(client):
     user_data = {
         "email": settings.default_admin_email.get_secret_value(),
         "password": settings.default_admin_password.get_secret_value()
     }
-    response = client.post("/login_user", json=user_data)
+    response = await client.post("/login_user", json=user_data)
     response_data = response.json()
 
     return {

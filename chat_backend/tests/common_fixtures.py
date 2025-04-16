@@ -13,26 +13,24 @@ def check_test_env():
     
 
 # Source: https://github.com/testcontainers/testcontainers-python/issues/263
-# @pytest.fixture(scope="function")
-@contextlib.contextmanager
-def postgres_container():
-    with PostgresContainer("postgres:15-alpine") as postgres:
-        # postgres.driver = "asyncpg"
+@pytest.fixture(scope="function")
+def postgres_url():
+    with PostgresContainer("postgres:15-alpine", driver="asyncpg") as postgres:
         postgres.start()
-        print("======PG-LOGS======")
-        print(postgres.get_connection_url())
-        yield postgres
-        session_manager.close()
+        print(f"Connecting to test DB at: {postgres.get_connection_url()}")
+        yield postgres.get_connection_url()
 
 
 @pytest.fixture(scope="function")
-async def db_session():
-    with postgres_container() as pg:
-        await session_manager.init_db(pg.get_connection_url())
-        async with session_manager.session() as session:
-            db_user = await get_user_by_email(
-                session=session,
-                email=settings.default_admin_email.get_secret_value()
-            )
-            return session, db_user.id
+async def db_session(postgres_url):
+    await session_manager.init_db(postgres_url)
+        
+    async with session_manager.session() as session:
+        db_user = await get_user_by_email(
+            session=session,
+            email=settings.default_admin_email.get_secret_value()
+        )
+        yield session, db_user.id
+    await session_manager.close()
+
 

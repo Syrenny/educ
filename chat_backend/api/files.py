@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, UploadFile, BackgroundTasks
-from fastapi.responses import StreamingResponse
 from sqlalchemy.exc import SQLAlchemyError
+from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, UploadFile, BackgroundTasks
 
 from chat_backend.rag import index_document
 from chat_backend.models import FileMeta, FileModel
@@ -39,11 +39,12 @@ async def add_file(
 ) -> list[FileMeta]:
     """Upload a file and store it."""
     
-    if len(storage.list(user_id)) + len(files) > settings.max_files_per_user:
+    files_in_storage = await storage.list(user_id)
+    if len(files_in_storage) + len(files) > settings.max_files_per_user:
         raise FileLimitExceededException(settings.max_files_per_user)
         
     # Validate and read files
-    contents = reader(files)
+    contents = await reader(files)
     
     # Upload files    
     files_meta = []
@@ -58,7 +59,7 @@ async def add_file(
                 file_id=db_meta.file_id,
                 filename=upload_file.filename,
             )
-            storage.write(
+            await storage.write(
                 user_id=user_id,
                 model = FileModel(
                     meta=meta,
@@ -66,12 +67,12 @@ async def add_file(
                 ))
             files_meta.append(meta)
     except SQLAlchemyError:
-        session.rollback()
+        await session.rollback()
         for meta in files_meta:
-            storage.delete(meta)
+            await storage.delete(meta)
         raise SQLAlchemyUploadException
 
-    session.commit()
+    await session.commit()
     
     # Start indexing
     for content, meta in zip(contents, files_meta):
@@ -123,19 +124,19 @@ async def delete_file(
             file_id
         )
     except SQLAlchemyError:
-        session.rollback()
+        await session.rollback()
         raise SQLAlchemyDeletionException
-    if not db_file or not storage.delete(
+    if not db_file or not await storage.delete(
         user_id,
         FileMeta(
             file_id=file_id,
             filename=db_file.filename
         )
     ):
-        session.rollback()
+        await session.rollback()
         raise FileDeletionError(file_id)
         
-    session.commit()
+    await session.commit()
     
     return True
 
@@ -151,10 +152,11 @@ async def download_file(
     session: AsyncSession = Depends(get_db)
 ) -> StreamingResponse:
     """Return the file contents."""
-    if not (db_file := await find_file_meta(session, user_id, file_id)):
+    db_file = await find_file_meta(session, user_id, file_id)
+    if db_file is None:
         raise FileNotFoundException()
     
-    file_model = storage.read(
+    file_model = await storage.read(
         user_id,
         FileMeta(
             file_id=file_id, 
@@ -181,8 +183,9 @@ async def list_files(
     session: AsyncSession = Depends(get_db)
 ) -> list[FileMeta]:
     files_meta = []
-    for file_id in storage.list(user_id):
-        if db_meta := await find_file_meta(session, user_id, file_id):
+    for file_id in await storage.list(user_id):
+        db_meta = await find_file_meta(session, user_id, file_id)
+        if db_meta:
             files_meta.append(FileMeta(
                 file_id=db_meta.file_id,
                 filename=db_meta.filename

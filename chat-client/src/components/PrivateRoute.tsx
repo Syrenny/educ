@@ -5,6 +5,11 @@ const PrivateRoute = () => {
 	const { user } = useAuth()
 	const location = useLocation()
 
+    if (user === undefined) {
+		return <div>Loading...</div>
+	}
+
+    console.log("User in private route", user)
 	if (!user) {
 		return <Navigate to='/login' replace state={{ from: location }} />
 	}

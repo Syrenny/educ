@@ -5,6 +5,7 @@ from chat_backend.database.crud import (
     find_file_chunks,
     delete_file_chunks,
     DBChunk,
+    select
 )
 
 
@@ -16,9 +17,12 @@ async def test_save_file_chunks(test_chunks_session):
     
     chunks = ["first", "second", "third"]
     await save_file_chunks(session, user_id, file_meta, chunks)
-
-    results = session.query(DBChunk).filter_by(user_id=user_id).all()
     
+    await session.commit()
+
+    stmt = select(DBChunk).filter_by(user_id=user_id)
+    result = await session.execute(stmt)
+    results = result.scalars().all()
     assert len(results) == 3
     assert all(r.file_id == file_meta.file_id for r in results)
 
@@ -31,7 +35,7 @@ async def test_find_file_chunks(test_chunks_session):
 
     chunks = ["find me please", "just noise", "also find me"]
     await save_file_chunks(session, user_id, file_meta, chunks)
-    session.commit()
+    await session.commit()
 
     results = await find_file_chunks(session, "find", user_id, file_meta.file_id)
     assert len(results) == 2
@@ -46,11 +50,14 @@ async def test_delete_file_chunks(test_chunks_session):
 
     chunks = ["to be deleted", "also gone"]
     await save_file_chunks(session, user_id, file_meta, chunks)
-    session.commit()
+    await session.commit()
 
     await delete_file_chunks(session, user_id,
                        file_meta.filename, file_meta.file_id)
-    session.commit()
+    await session.commit()
 
-    results = session.query(DBChunk).filter_by(user_id=user_id).all()
+    stmt = select(DBChunk).filter_by(user_id=user_id)
+    result = await session.execute(stmt)
+    results = result.scalars().all()
+    
     assert len(results) == 0

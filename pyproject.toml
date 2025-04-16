@@ -34,3 +34,9 @@ dependencies = [
     "uvicorn>=0.34.0",
     "vllm>=0.8.3",
 ]
+
+[tool.pytest.ini_options]
+testpaths = "chat_backend/tests/test_completions"
+pythonpath = "."
+addopts = "-v --tb=short --capture=no"
+asyncio_mode = "auto"

@@ -1,6 +1,7 @@
 from uuid import UUID
 import logging
 
+from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -15,10 +16,13 @@ async def list_file_meta(
     session: AsyncSession,
     user_id: UUID
 ) -> list[DBFileMeta]:
-    result = await session.query(DBFileMeta).filter(
+    stmt = select(DBFileMeta).filter(
         DBFileMeta.user_id == user_id,
     )
-    return result.all()
+
+    result = await session.execute(stmt)
+
+    return result.scalars().all()
         
         
 async def add_file_meta(
@@ -42,11 +46,14 @@ async def find_file_meta(
     user_id: UUID,
     file_id: UUID
 ) -> None | DBFileMeta:
-    result = await session.query(DBFileMeta).filter(
+    stmt = select(DBFileMeta).filter(
         DBFileMeta.user_id == user_id,
         DBFileMeta.file_id == file_id
     )
-    return result.first()
+
+    result = await session.execute(stmt)
+
+    return result.scalars().first()
 
 
 async def delete_file_meta(
@@ -54,10 +61,12 @@ async def delete_file_meta(
     user_id: UUID,
     file_id: UUID,
     ) -> None | DBFileMeta:    
-    if file_meta := await find_file_meta(session, user_id, file_id):
-        await session.delete(file_meta)
+    db_file_meta = await find_file_meta(session, user_id, file_id)
 
-    return file_meta
+    if db_file_meta:
+        await session.delete(db_file_meta)
+
+    return db_file_meta
 
 
 async def create_user(
@@ -85,16 +94,18 @@ async def get_user_by_email(
     email: str
     ) -> DBUser | None:
     """Возвращает пользователя по email, или None, если пользователь не найден."""
-    result = await session.query(DBUser).filter(DBUser.email == email)
-    return result.first()
+    result = await session.execute(select(DBUser).filter(DBUser.email == email))
+    return result.scalar_one_or_none()
 
 
 async def get_user_by_id(
     session: AsyncSession,
     user_id: UUID
     ) -> DBUser | None:
-    result = await session.query(DBUser).filter(DBUser.id == user_id)
-    return result.first()
+    result = await session.execute(
+        db.select(DBUser).filter(DBUser.id == user_id)
+    )
+    return result.scalars().first()
 
 
 async def create_token(
@@ -104,8 +115,8 @@ async def create_token(
     ) -> DBToken:
     """Создает токен для пользователя."""
     try:
-        existing_token = await session.query(
-            DBToken).filter_by(user_id=user_id).first()
+        result = await session.execute(select(DBToken).filter(DBToken.user_id == user_id))
+        existing_token = result.scalar_one_or_none()
 
         if existing_token:
             existing_token.token = token
@@ -137,7 +148,7 @@ async def save_file_chunks(
             )
             for chunk in chunks
         ]
-        session.bulk_save_objects(chunk_objects)
+        session.add_all(chunk_objects)
     except SQLAlchemyError as e:
         await session.rollback()
         logger.error(f"Ошибка при сохранении чанков: {e}")
@@ -152,11 +163,14 @@ async def find_file_chunks(
 ) -> list[DBChunk]:
     """Ищет чанки с помощью pg_trgm."""
     try:
-        return await session.query(DBChunk).filter(
-            DBChunk.user_id == user_id,
-            DBChunk.file_id == file_id,
-            DBChunk.chunk_text.op('~')(query)
-        ).all()
+        result = await session.execute(
+            db.select(DBChunk).filter(
+                DBChunk.user_id == user_id,
+                DBChunk.file_id == file_id,
+                DBChunk.chunk_text.op('~')(query)
+            )
+        )
+        return result.scalars().all()
     except SQLAlchemyError as e:
         logger.error(f"Ошибка при поиске чанков: {e}")
         return []
@@ -170,11 +184,13 @@ async def delete_file_chunks(
 ) -> None:
     """Удаляет чанки, связанные с файлом пользователя."""
     try:
-        await session.query(DBChunk).filter_by(
-            user_id=user_id,
-            filename=filename,
-            file_id=file_id
-        ).delete(synchronize_session=False)
+        await session.execute(
+            db.delete(DBChunk).filter_by(
+                user_id=user_id,
+                filename=filename,
+                file_id=file_id
+            )
+        )
     except SQLAlchemyError as e:
         await session.rollback()
         logger.error(f"Ошибка при удалении чанков: {e}")
@@ -186,11 +202,13 @@ async def set_indexed(
     user_id: UUID,
     file_id: UUID,
     ) -> bool:
-    result = await session.query(DBFileMeta).filter(
+    stmt = select(DBFileMeta).filter(
         DBFileMeta.user_id == user_id,
         DBFileMeta.file_id == file_id,
     )
-    db_file_meta = result.first()
+    
+    result = await session.execute(stmt)
+    db_file_meta = result.scalars().first()
     if db_file_meta:
         db_file_meta.is_indexed = True
         return True
@@ -237,8 +255,10 @@ async def get_messages(
     user_id: UUID,
     file_id: UUID
 ) -> list[DBMessage] | None:
-    result = await session.query(DBMessage).filter(
-        DBMessage.user_id == user_id,
-        DBMessage.file_id == file_id
-    ).order_by(DBMessage.timestamp)
-    return result.all()
+    result = await session.execute(
+        db.select(DBMessage).filter(
+            DBMessage.user_id == user_id,
+            DBMessage.file_id == file_id
+        ).order_by(DBMessage.timestamp)
+    )
+    return result.scalars().all()

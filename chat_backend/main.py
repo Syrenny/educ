@@ -36,6 +36,8 @@ def get_langchain_openai_instance():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not settings.env in ["TEST"]:
+        await session_manager.init_db()
     app.state.langchain_openai_client = get_langchain_openai_instance()
     yield
     await session_manager.close()

@@ -125,7 +125,7 @@ class FileReader:
         for file in files:
             self._validate_before(file)
             
-            content = await file.file.read()
+            content = file.file.read()
             
             try:
                 doc = fitz.open(

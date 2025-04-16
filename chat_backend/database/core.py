@@ -34,7 +34,7 @@ class DatabaseSessionManager:
             raise NotInitializedError("Sessionmaker is not initialized.")
         return self._sessionmaker
 
-    async def init_db(self, url):
+    async def init_db(self, url: str) -> None:
         self._engine = create_async_engine(
             url,
             pool_pre_ping=True,
@@ -54,7 +54,8 @@ class DatabaseSessionManager:
                 
     async def __create_schema(self):
         async with self.engine.connect() as conn:
-            await conn.execution_options(isolation_level="AUTOCOMMIT").execute(db.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            conn = await conn.execution_options(isolation_level="AUTOCOMMIT")
+            await conn.execute(db.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
             await conn.run_sync(Base.metadata.create_all)
             await conn.execute(
                 db.text(
@@ -62,7 +63,7 @@ class DatabaseSessionManager:
             )
             
     async def __create_default_user(self):
-        user = UserModel(
+        user_model = UserModel(
             email=settings.default_admin_email.get_secret_value(),
             password=settings.default_admin_password.get_secret_value()
         )
@@ -74,10 +75,10 @@ class DatabaseSessionManager:
             if user is None:
                 db_user = await create_user(
                     session,
-                    email=user.email,
-                    password=hash_password(user.password)
+                    email=user_model.email,
+                    password=hash_password(user_model.password)
                 )
-                session.flush()
+                await session.flush()
                 token = generate_access_token(db_user)
                 await create_token(
                     session=session,
@@ -106,9 +107,6 @@ class DatabaseSessionManager:
         
 
 session_manager = DatabaseSessionManager()
-    
-if not settings.env in ["TEST"]:
-    asyncio.run(session_manager.init_db())
     
 
 async def get_db() -> AsyncIterator[AsyncSession]:

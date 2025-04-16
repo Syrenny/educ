@@ -11,12 +11,12 @@ async def test_is_indexed_and_set_indexed(db_session: AsyncSession):
 
     file_meta = await add_file_meta(session, user_id=user_id, filename=filename)
     file_id = file_meta.file_id
-    session.commit()
+    await session.commit()
 
     assert await is_indexed(session, user_id, file_id) is False or None
 
     updated = await set_indexed(session, user_id, file_id)
-    session.commit()
+    await session.commit()
 
     assert updated is True
     assert await is_indexed(session, user_id, file_id) is True

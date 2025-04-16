@@ -27,6 +27,7 @@ def get_langchain_llm() -> LangchainLLM:
         # Always a good idea to use Cache
         cache=SQLiteCache("./benchmark/data/cache/openai_cache.db"),
         rate_limiter=vsegpt_rate_limiter,
+        streaming=True
     )
 
 
