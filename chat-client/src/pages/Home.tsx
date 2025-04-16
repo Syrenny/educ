@@ -3,21 +3,20 @@ import { getFiles, uploadFile } from '../api/api'
 import FileList from '../components/FileList'
 import Chat from '../components/Chat'
 
-interface File {
-	filename: string
-	file_id: string
-}
+import type { FileMeta } from '../types'
+
 
 const Home = () => {
-	const [files, setFiles] = useState<File[]>([])
+	const [files, setFiles] = useState<FileMeta[]>([])
 	const [selectedFile, setSelectedFile] = useState<string | null>(null)
 	const [uploading, setUploading] = useState<boolean>(false)
 
+    const fetchFiles = async () => {
+		const files = await getFiles()
+		setFiles(files)
+	}
+    
 	useEffect(() => {
-		const fetchFiles = async () => {
-			const files = await getFiles()
-			setFiles(files)
-		}
 		fetchFiles()
 	}, [])
 
@@ -29,25 +28,29 @@ const Home = () => {
 			setUploading(true)
 			try {
 				const uploadedFile = await uploadFile(files)
-				setFiles(prevFiles => [...prevFiles, uploadedFile])
 			} catch (error) {
 				console.error('Error uploading file:', error)
 			} finally {
 				setUploading(false)
+                await fetchFiles()
 			}
 		}
+        event.target.value = ''
 	}
 
 	return (
 		<div className='flex'>
 			<div className='w-1/4'>
-				<h2>Files</h2>
+				<h1>Files</h1>
 				{files.length === 0 ? (
 					<p>No files available.</p>
 				) : (
 					<FileList files={files} onSelectFile={setSelectedFile} />
 				)}
-				<input type='file' onChange={handleFileUpload} />
+				<div>
+					<input type='file' onChange={handleFileUpload} />
+				</div>
+
 				{uploading && <p>Uploading...</p>}
 			</div>
 
