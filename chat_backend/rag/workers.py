@@ -1,6 +1,8 @@
 from uuid import UUID
 from typing import AsyncGenerator
 
+from loguru import logger
+
 from .utils.pdf import read_pdf
 from .core.retrieval import Reranker
 from .core.generation import Generator
@@ -20,6 +22,7 @@ async def index_document(
     file: bytes,
     meta: FileMeta
     ) -> None:
+    logger.debug(f"Starting indexation process for {meta.filename}")
     chunker = SemanticChunker()
     
     document = read_pdf(file)
@@ -37,6 +40,7 @@ async def index_document(
         user_id=user_id,
         file_id=meta.file_id,
     )
+    logger.debug(f"Ended indexation process for {meta.filename}")
     await session.commit()
     
 

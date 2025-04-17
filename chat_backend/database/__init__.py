@@ -17,6 +17,7 @@ from .crud import (
     is_indexed,
     get_messages,
     add_message,
-    get_user_by_id
+    get_user_by_id,
+    find_user
 )
 from .models import Base

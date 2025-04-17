@@ -59,6 +59,7 @@ async def create_chat_completion(
             content=full_message,
             is_user=False
         )
+        await session.commit()
         
         yield "data: [DONE]\n\n"
 
@@ -70,7 +71,7 @@ async def chat_completions(
     session: AsyncSession = Depends(get_db),
     user_id: UUID = Depends(get_user_id),
     ):
-    file_id = UUID(request.documents[0].popitem()[1])
+    file_id = UUID(request.documents[0]["file_id"])
     query = request.messages[-1]["content"]
     
     if not await is_indexed(
@@ -87,6 +88,7 @@ async def chat_completions(
         content=query,
         is_user=True
     )
+    await session.commit()
     
     generator = create_chat_completion(
         session=session,
@@ -94,6 +96,7 @@ async def chat_completions(
         file_id=file_id,
         query=query
     )
+    
     
     return StreamingResponse(
         content=generator, 

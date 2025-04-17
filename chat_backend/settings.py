@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     
     sqlalchemy_url: str
     test_sqlalchemy_url: str
+    sign_secret_key: str
     
     # Chunker
     chunker_name: str

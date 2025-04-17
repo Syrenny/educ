@@ -2,7 +2,9 @@ from uuid import UUID
 from datetime import datetime, timedelta
 
 import jwt
+import hmac
 import bcrypt
+import hashlib
 from fastapi import Depends, HTTPException
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -63,6 +65,12 @@ def generate_access_token(db_user: DBUser) -> str:
     ), algorithm=settings.jwt_algorithm)
     
     return encoded_jwt
+
+
+def generate_signature(file_id: str, expires: int) -> str:
+    """Генерация подписи для ссылки"""
+    data = f'{file_id}:{expires}'.encode()
+    return hmac.new(settings.sign_secret_key.encode(), data, hashlib.sha256).hexdigest()
     
     
 # === Passwords ===

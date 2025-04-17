@@ -2,6 +2,7 @@ from uuid import UUID
 import logging
 
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -54,6 +55,19 @@ async def find_file_meta(
     result = await session.execute(stmt)
 
     return result.scalars().first()
+
+
+async def find_user(
+    session: AsyncSession,
+    file_id: UUID
+) -> None | DBUser:
+    stmt = select(DBFileMeta).options(
+        joinedload(DBFileMeta.user)
+    ).filter(DBFileMeta.file_id == file_id)
+
+    result = await session.execute(stmt)
+
+    return result.scalars().first().user
 
 
 async def delete_file_meta(

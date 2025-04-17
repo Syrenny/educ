@@ -14,7 +14,8 @@ async def test_chunks_session(db_session):
 
     file_meta = FileMeta(
         file_id=db_file_meta.file_id,
-        filename=db_file_meta.filename
+        filename=db_file_meta.filename,
+        is_indexed=db_file_meta.is_indexed
     )
 
     yield session, user_id, file_meta

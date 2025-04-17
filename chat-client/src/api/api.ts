@@ -1,5 +1,7 @@
-import axios from 'axios'
 import apiClient from '../utils/axios'
+import type { Message } from '../types'
+import { getUser } from '../utils/auth'
+import OpenAI from 'openai'
 
 export const loginUser = async (email: string, password: string) => {
 	const response = await apiClient.post(
@@ -44,7 +46,7 @@ export const getFileStatus = async (fileId: string) => {
 	return response.data
 }
 
-export const deleteFile = async (fileId: string) => {
+export const deleteFile = async (fileId: string): Promise<boolean> => {
 	const response = await apiClient.delete(`/files/${fileId}`)
 	return response.data
 }
@@ -54,12 +56,67 @@ export const getFiles = async () => {
 	return response.data
 }
 
-export const getFile = async (fileId: string) => {
-	const response = await apiClient.get(`/files/${fileId}`)
+export const getPDF = async (fileId: string): Promise<Uint8Array> => {
+	const response = await apiClient.get(`/files/${fileId}`, {
+		responseType: 'arraybuffer',
+	})
+
+	return new Uint8Array(response.data)
+}
+
+export const getURL = async (fileId: string): Promise<string> => {
+	const response = await apiClient.get(`/files/${fileId}/signed-url`)
+
+    const baseURL = response.config.baseURL
+    console.log("BaseURL", baseURL)
+    const relativeURL = response.data
+    const fullURL = new URL(relativeURL, baseURL).toString()
+    console.log("FullURL", fullURL)
+	return fullURL
+}
+
+export const createStreamChatCompletions = async (
+	query: Message
+): Promise<ReadableStreamDefaultReader<Uint8Array>> => {
+    const user = getUser()
+	const response = await fetch('http://localhost:8000/v1/chat/completions', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${user['token']}`,
+		},
+		body: JSON.stringify({
+			messages: [
+				{
+					role: 'user',
+					content: query.content,
+				},
+			],
+			documents: [
+				{
+                    filename: query.file_meta.filename,
+					file_id: query.file_meta.file_id
+				},
+			],
+		}),
+	})
+
+	if (!response.ok || !response.body) {
+		throw new Error('Stream response error')
+	}
+
+	return response.body.getReader()
+}
+
+
+export const getHistory = async (fileId: string) => {
+	const response = await apiClient.get(`/history/${fileId}`)
 	return response.data
 }
 
-export const getChatCompletions = async (messages: any[]) => {
-	const response = await apiClient.post('/v1/chat/completions', { messages })
+export const isIndexed = async (
+	fileId: string
+): Promise<boolean> => {
+	const response = await apiClient.get(`/files/${fileId}/status`)
 	return response.data
 }

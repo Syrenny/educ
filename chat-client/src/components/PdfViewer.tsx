@@ -1,25 +1,35 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { getURL } from '../api/api'
+import '@react-pdf-viewer/core/lib/styles/index.css'
+import '@react-pdf-viewer/default-layout/lib/styles/index.css'
+import type { FileMeta } from '../types'
+
 
 interface PDFViewerProps {
-	fileId: string
+	meta: FileMeta
 }
 
-export const PDFViewer: React.FC<PDFViewerProps> = ({ fileId }) => {
-	useEffect(() => {
-		// Логика для загрузки и рендеринга PDF
-		const loadPDF = async () => {
-			// Здесь можно использовать библиотеку pdf.js или создать собственное решение
-			// Для начала выводим простой текст
-			console.log('Loading PDF with fileId:', fileId)
-		}
+export const PDFViewer: React.FC<PDFViewerProps> = ({ meta }) => {
+	const [pdfUrl, setPdfUrl] = useState<string>("")
 
-		loadPDF()
-	}, [fileId])
+	useEffect(() => {
+        const fetchURL = async () => {
+            const url = await getURL(meta.file_id)
+            setPdfUrl(url)
+        }
+
+		fetchURL()
+	}, [meta])
+
+	const viewerUrl = `/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`
 
 	return (
-		<div>
-			{/* Вставь сюда компонент для отображения PDF */}
-			<p>PDF Viewer for {fileId}</p>
-		</div>
+        <iframe
+            src={viewerUrl}
+            width='100%'
+            height='1000px'
+            className='h-full w-full'
+            title='PDF Viewer'
+        />
 	)
 }

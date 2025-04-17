@@ -53,7 +53,8 @@ async def test_chat_completions(
         ],
         "documents": [
             {
-                filename: file_id
+                "filename": filename,
+                "file_id": file_id
             }
         ]
     }
