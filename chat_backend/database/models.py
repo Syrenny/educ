@@ -62,6 +62,8 @@ class DBMessage(Base):
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         "users.id"), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    action = db.Column(db.Text, nullable=True, default=None)
+    snippet = db.Column(db.Text, nullable=True, default=None)
     timestamp = db.Column(db.DateTime, default=datetime.now)
     is_user_message = db.Column(db.Boolean, nullable=False)
 

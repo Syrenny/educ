@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from .models import *
-from chat_backend.models import FileMeta
+from chat_backend.models import FileMeta, ShortcutModel
 
 
 logger = logging.getLogger(__name__)
@@ -174,7 +174,7 @@ async def find_file_chunks(
     query: str,
     user_id: UUID,
     file_id: UUID
-) -> list[DBChunk]:
+) -> list[str]:
     """Ищет чанки с помощью pg_trgm."""
     try:
         result = await session.execute(
@@ -184,7 +184,9 @@ async def find_file_chunks(
                 DBChunk.chunk_text.op('~')(query)
             )
         )
-        return result.scalars().all()
+        db_chunks = result.scalars().all()
+        
+        return [db_chunk.chunk_text for db_chunk in db_chunks]
     except SQLAlchemyError as e:
         logger.error(f"Ошибка при поиске чанков: {e}")
         return []
@@ -249,13 +251,16 @@ async def add_message(
     user_id: UUID,
     file_id: UUID,
     content: str,
-    is_user: bool
+    is_user: bool,
+    shortcut: ShortcutModel | None = None,
 ) -> DBMessage:
     new_message = DBMessage(
         user_id=user_id,
         file_id=file_id,
         content=content,
-        is_user_message=is_user
+        is_user_message=is_user,
+        action=shortcut.action.value if shortcut else None,
+        snippet=shortcut.content if shortcut else None
     )
 
     session.add(new_message)

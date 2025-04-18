@@ -7,7 +7,7 @@ from .utils.pdf import read_pdf
 from .core.retrieval import Reranker
 from .core.generation import Generator
 from .core.indexing import SemanticChunker
-from chat_backend.models import FileMeta
+from chat_backend.models import FileMeta, ShortcutModel
 from chat_backend.database import (
     save_file_chunks,
     find_file_chunks,
@@ -65,9 +65,10 @@ async def retrieve(
 
 def generate(
     query: str,
-    context: list[str]
+    context: list[str],
+    shortcut: ShortcutModel
     ) -> AsyncGenerator[str, None]:
-    generator = Generator()
+    generator = Generator(shortcut)
     
     return generator(query, context)
     

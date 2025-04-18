@@ -1,12 +1,14 @@
 from uuid import UUID
 
+from loguru import logger
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from chat_backend.models import (
     ChatCompletionRequest, 
     ChatCompletionResponseStreamChoice, 
-    ChatCompletionStreamResponse
+    ChatCompletionStreamResponse,
+    ShortcutModel
 )
 from chat_backend.security import get_user_id
 from chat_backend.rag import retrieve, generate
@@ -21,7 +23,8 @@ async def create_chat_completion(
     session: AsyncSession,
     query: str,
     user_id: UUID,
-    file_id: UUID
+    file_id: UUID,
+    shortcut: ShortcutModel | None
     ):
     full_message = ""
     
@@ -32,14 +35,14 @@ async def create_chat_completion(
         file_id=file_id
     )
     try:
-        async for chunk in generate(query, context):
-            full_message += chunk + " "
+        async for chunk in generate(query, context, shortcut):
+            full_message += chunk
             
             chunk = ChatCompletionStreamResponse(
                 model="null",
                 choices=[
                     ChatCompletionResponseStreamChoice(
-                        delta={"content": chunk + " "},
+                        delta={"content": chunk},
                         finish_reason=None,
                         index=0,
                     )
@@ -57,7 +60,7 @@ async def create_chat_completion(
             user_id=user_id,
             file_id=file_id,
             content=full_message,
-            is_user=False
+            is_user=False,
         )
         await session.commit()
         
@@ -71,6 +74,9 @@ async def chat_completions(
     session: AsyncSession = Depends(get_db),
     user_id: UUID = Depends(get_user_id),
     ):
+    
+    logger.debug("shortcut json", request.shortcut)
+    
     file_id = UUID(request.documents[0]["file_id"])
     query = request.messages[-1]["content"]
     
@@ -86,7 +92,8 @@ async def chat_completions(
         user_id=user_id,
         file_id=file_id,
         content=query,
-        is_user=True
+        is_user=True,
+        shortcut=request.shortcut
     )
     await session.commit()
     
@@ -94,9 +101,9 @@ async def chat_completions(
         session=session,
         user_id=user_id, 
         file_id=file_id,
-        query=query
+        query=query,
+        shortcut=request.shortcut
     )
-    
     
     return StreamingResponse(
         content=generator, 

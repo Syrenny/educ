@@ -27,6 +27,77 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta name="google" content="notranslate">
     <title>PDF.js viewer</title>
 
+<style>
+    #custom-context-menu {
+        position: absolute;
+        display: none;
+        background: white;
+        border: 1px solid #ccc;
+        z-index: 9999;
+        font-family: sans-serif;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        padding: 4px 0;
+    }
+
+    #custom-context-menu button {
+        display: block;
+        background: none;
+        border: none;
+        padding: 8px 12px;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    #custom-context-menu button:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+
+<div id="custom-context-menu">
+    <button onclick="handleMenuClick('ask')">Задать вопрос</button>
+    <button onclick="handleMenuClick('explain')">Объяснить</button>
+    <button onclick="handleMenuClick('translate')">Перевести на русский</button>
+</div>
+
+<script>
+    let selectedText = ""
+
+    document.addEventListener("contextmenu", function (event) {
+        const sel = window.getSelection()
+        selectedText = sel.toString().trim()
+
+        if (selectedText.length > 0) {
+            event.preventDefault()
+
+            const menu = document.getElementById("custom-context-menu")
+            menu.style.left = `${event.pageX}px`
+            menu.style.top = `${event.pageY}px`
+            menu.style.display = "block"
+        } else {
+            hideContextMenu()
+        }
+    })
+
+    document.addEventListener("click", hideContextMenu)
+
+    function hideContextMenu() {
+        document.getElementById("custom-context-menu").style.display = "none"
+    }
+
+    function handleMenuClick(action) {
+        hideContextMenu()
+
+        if (!selectedText) return
+
+        window.parent.postMessage({
+            type: "pdf-user-action",
+            action,
+            text: selectedText
+        }, "*");
+    }
+</script>
+
 <!-- This snippet is used in production (included from viewer.html) -->
 <link rel="resource" type="application/l10n" href="locale/locale.json">
 <script src="../build/pdf.mjs" type="module"></script>

@@ -79,6 +79,8 @@ export const createStreamChatCompletions = async (
 	query: Message
 ): Promise<ReadableStreamDefaultReader<Uint8Array>> => {
     const user = getUser()
+    console.log("action", query.shortcut?.action)
+    console.log("content", query.shortcut?.content)
 	const response = await fetch('http://localhost:8000/v1/chat/completions', {
 		method: 'POST',
 		headers: {
@@ -94,12 +96,22 @@ export const createStreamChatCompletions = async (
 			],
 			documents: [
 				{
-                    filename: query.file_meta.filename,
-					file_id: query.file_meta.file_id
+					filename: query.file_meta.filename,
+					file_id: query.file_meta.file_id,
 				},
 			],
+			shortcut: {
+                action: query.shortcut?.action,
+                content: query.shortcut?.content
+            },
 		}),
 	})
+
+    if (!response.ok) {
+        if (response.status === 401) {
+			window.location.href = '/login'
+        }
+    }
 
 	if (!response.ok || !response.body) {
 		throw new Error('Stream response error')
