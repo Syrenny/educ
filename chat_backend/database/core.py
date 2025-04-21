@@ -1,5 +1,3 @@
-
-import asyncio
 import contextlib
 
 import sqlalchemy as db
@@ -55,12 +53,37 @@ class DatabaseSessionManager:
     async def __create_schema(self):
         async with self.engine.connect() as conn:
             conn = await conn.execution_options(isolation_level="AUTOCOMMIT")
-            await conn.execute(db.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            await conn.execute(db.text("CREATE EXTENSION IF NOT EXISTS vector"))
             await conn.run_sync(Base.metadata.create_all)
-            await conn.execute(
-                db.text(
-                    'CREATE INDEX IF NOT EXISTS chunk_idx ON chunks USING GIN (chunk_text gin_trgm_ops);')
-            )
+            await conn.execute(db.text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='chunks' AND column_name='embedding'
+                    ) THEN
+                        ALTER TABLE chunks ADD COLUMN embedding vector(768);
+                    END IF;
+                END$$;
+            """))
+
+            # Create index if it doesn't exist
+            await conn.execute(db.text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_indexes 
+                        WHERE tablename = 'chunks' AND indexname = 'chunks_embedding_idx'
+                    ) THEN
+                        CREATE INDEX chunks_embedding_idx 
+                        ON chunks USING ivfflat (embedding vector_cosine_ops) 
+                        WITH (lists = 100);
+                    END IF;
+                END$$;
+            """))
+
+            # Analyze table
+            await conn.execute(db.text("ANALYZE chunks"))
             
     async def __create_default_user(self):
         user_model = UserModel(
@@ -99,9 +122,9 @@ class DatabaseSessionManager:
         session = self.sessionmaker()
         try:
             yield session
-        except Exception:
+        except Exception as e:
             await session.rollback()
-            raise
+            raise e
         finally:
             await session.close()
         

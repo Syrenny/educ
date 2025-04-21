@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createStreamChatCompletions, getHistory } from '../../api/api'
+import { useAction } from '../../context/ActionContext'
+import { FileMeta, Message, Action } from '../../types'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
-import { FileMeta, Message, ShortcutAction } from '../../types'
-import { useShortcut } from '../../context/ShortcutContext'
 
 interface ChatProps {
 	file_meta: FileMeta
@@ -15,7 +15,8 @@ const Chat = ({ file_meta }: ChatProps) => {
 	const [messages, setMessages] = useState<Message[]>([])
 	const [input, setInput] = useState<string>('')
 	const [isLoading, setIsLoading] = useState(false)
-    const { shortcut } = useShortcut()
+
+	const { action, snippet } = useAction()
 
 	const scrollToBottom = async () => {
 		if (chatContainerRef.current) {
@@ -27,7 +28,7 @@ const Chat = ({ file_meta }: ChatProps) => {
 
 	useEffect(() => {
 		scrollToBottom()
-    }, [messages])
+	}, [messages])
 
 	useEffect(() => {
 		const loadMessages = async () => {
@@ -43,72 +44,73 @@ const Chat = ({ file_meta }: ChatProps) => {
 		loadMessages()
 	}, [file_meta])
 
-    useEffect(() => {
-        if (shortcut) {
-		    if (shortcut.action === ShortcutAction.Translate || shortcut.action === ShortcutAction.Explain) {
-                handleShortcutMessage()
-            }
+	useEffect(() => {
+		const targetActions = [Action.Translate, Action.Explain]
 
-        }
-	}, [shortcut])
+		if (targetActions.includes(action)) {
+			handleSendMessage()
+		}
+	}, [action])
 
+	const sendToServer = async (userMessage: Message) => {
+		try {
+			const reader = await createStreamChatCompletions(userMessage)
+			const decoder = new TextDecoder('utf-8')
 
-    const sendToServer = async (userMessage: Message) => {
-        try {
-            const reader = await createStreamChatCompletions(userMessage)
-            const decoder = new TextDecoder('utf-8')
+			while (true) {
+				const { done, value } = await reader.read()
+				if (done) break
 
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
+				const chunk = decoder.decode(value, { stream: true })
 
-                const chunk = decoder.decode(value, { stream: true })
+				chunk.split('\n').forEach(line => {
+					if (line.startsWith('data: ')) {
+						const data = line.replace('data: ', '').trim()
 
-                chunk.split('\n').forEach(line => {
-                    if (line.startsWith('data: ')) {
-                        const data = line.replace('data: ', '').trim()
+						if (data === '[DONE]') return
 
-                        if (data === '[DONE]') return
-
-                        try {
-                            const json = JSON.parse(data)
-                            const delta = json.choices?.[0]?.delta?.content
-                            if (delta) {
-                                const last = history.current[history.current.length - 1]
-                                last.content += delta
-                                setMessages([...history.current])
-                            }
-                        } catch (err) {
-                            console.warn('JSON parse error in stream', err)
-                        }
-                    }
-                })
-            }
-        } catch (error) {
-            console.error('Error fetching chat completion', error)
-        } finally {
-            setIsLoading(false)
-        }
-    }
+						try {
+							const json = JSON.parse(data)
+							const delta = json.choices?.[0]?.delta?.content
+							if (delta) {
+								const last =
+									history.current[history.current.length - 1]
+								last.content += delta
+								setMessages([...history.current])
+							}
+						} catch (err) {
+							console.warn('JSON parse error in stream', err)
+						}
+					}
+				})
+			}
+		} catch (error) {
+			console.error('Error fetching chat completion', error)
+		} finally {
+			setIsLoading(false)
+		}
+	}
 
 	const handleSendMessage = async () => {
 		const userMessage: Message = {
 			file_meta,
 			content: input,
 			is_user: true,
-            shortcut: null
+			action: action,
+			snippet: snippet,
 		}
 
 		history.current.push(userMessage)
-        
-        const newAssistantMessage: Message = {
+
+		const newAssistantMessage: Message = {
 			file_meta,
-			content: "",
+			content: '',
 			is_user: false,
-            shortcut: null
+			action: action,
+			snippet: snippet,
 		}
 
-        history.current.push(newAssistantMessage)
+		history.current.push(newAssistantMessage)
 
 		setMessages([...history.current])
 		setInput('')
@@ -117,37 +119,12 @@ const Chat = ({ file_meta }: ChatProps) => {
 		sendToServer(userMessage)
 	}
 
-    const handleShortcutMessage = async () => {
-        if (shortcut) {
-            const shortcutMessage: Message = {
-                file_meta,
-                content: "",
-                is_user: true,
-                shortcut: shortcut
-            }
-
-            history.current.push(shortcutMessage)
-
-            const newAssistantMessage: Message = {
-                file_meta,
-                content: '',
-                is_user: false,
-                shortcut: null
-            }
-
-            history.current.push(newAssistantMessage)
-
-            setMessages([...history.current])
-            setInput('')
-            setIsLoading(true)
-
-            sendToServer(shortcutMessage)
-        }
-	}
-
 	return (
 		<div className='relative min-h-0 min-w-0 h-full'>
-			<div ref={chatContainerRef} className='scrollbar-custom h-full overflow-y-auto'>
+			<div
+				ref={chatContainerRef}
+				className='scrollbar-custom h-full overflow-y-auto'
+			>
 				<div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl xl:pt-10'>
 					<div className='flex h-max flex-col gap-8 pb-52'>
 						{messages.map((msg, index) => (

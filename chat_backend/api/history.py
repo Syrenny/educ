@@ -1,10 +1,11 @@
 from uuid import UUID
 
+from loguru import logger
 from fastapi import APIRouter, Depends
 
+from chat_backend.exceptions import *
 from chat_backend.models import Message
 from chat_backend.security import get_user_id
-from chat_backend.settings import settings
 from chat_backend.exceptions import *
 from chat_backend.database import (
     AsyncSession,
@@ -30,11 +31,16 @@ async def history(
         user_id=user_id,
         file_id=file_id
     )
+    logger.debug(f"DBMessages: {db_messages}")
+    if db_messages is None:
+        raise FileNotFoundException
     return [
         Message(
             content=m.content,
             timestamp=m.timestamp,
-            is_user=m.is_user_message
+            is_user=m.is_user_message,
+            action=m.action,
+            snippet=m.snippet
         ) for m in db_messages
     ]
 

@@ -15,7 +15,7 @@ def check_test_env():
 # Source: https://github.com/testcontainers/testcontainers-python/issues/263
 @pytest.fixture(scope="function")
 def postgres_url():
-    with PostgresContainer("postgres:15-alpine", driver="asyncpg") as postgres:
+    with PostgresContainer("pgvector/pgvector:pg15", driver="asyncpg") as postgres:
         postgres.start()
         print(f"Connecting to test DB at: {postgres.get_connection_url()}")
         yield postgres.get_connection_url()

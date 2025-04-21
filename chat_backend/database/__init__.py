@@ -18,6 +18,6 @@ from .crud import (
     get_messages,
     add_message,
     get_user_by_id,
-    find_user
+    find_user,
 )
 from .models import Base

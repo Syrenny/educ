@@ -1,17 +1,17 @@
 import React from 'react'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
-import { ShortcutContextProvider } from './context/ShortcutContext'
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import PrivateRoute from './components/PrivateRoute'
-import RegisterPage from './pages/RegisterPage'
-import LoginPage from './pages/LoginPage'
+import { ActionContextProvider } from './context/ActionContext'
+import { AuthProvider } from './context/AuthContext'
 import Home from './pages/Home'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 
 const App = () => {
 	return (
 		<React.StrictMode>
 			<AuthProvider>
-				<ShortcutContextProvider>
+				<ActionContextProvider>
 					<Router>
 						<Routes>
 							<Route
@@ -25,7 +25,7 @@ const App = () => {
 							</Route>
 						</Routes>
 					</Router>
-				</ShortcutContextProvider>
+				</ActionContextProvider>
 			</AuthProvider>
 		</React.StrictMode>
 	)

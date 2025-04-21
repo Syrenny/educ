@@ -28,9 +28,9 @@ const ChatMessage = ({ loading, message }: ChatMessageProps) => {
 								) : (
 									<div>
 										<h4 className='mb-1.5 mt-4 pl-0.5 text-sm text-gray-400 first:mt-0 dark:text-gray-500'>
-											#{message.shortcut?.action}
+											#{message.action}
 										</h4>
-										{message.shortcut?.content.trim()}
+										{message.snippet?.trim()}
 									</div>
 								)}
 							</div>

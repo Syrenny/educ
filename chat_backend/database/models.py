@@ -2,8 +2,11 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as db
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, declarative_base
+
+from chat_backend.models import Action
 
 Base = declarative_base()
 
@@ -53,6 +56,23 @@ class DBFileMeta(Base):
         "DBMessage", back_populates="file_meta", cascade="all, delete-orphan")
 
 
+message_chunk_association = db.Table(
+    "message_chunk_association",
+    db.Column(
+        "message_id", 
+        UUID(as_uuid=True),
+        db.ForeignKey("messages.id"), 
+        primary_key=True
+    ),
+    db.Column(
+        "chunk_id", 
+        UUID(as_uuid=True),
+        db.ForeignKey("chunks.id"), 
+        primary_key=True
+    )
+)
+
+
 class DBMessage(Base):
     __tablename__ = "messages"
 
@@ -62,11 +82,19 @@ class DBMessage(Base):
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey(
         "users.id"), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    action = db.Column(db.Text, nullable=True, default=None)
+    action = db.Column(db.Enum(Action, name="action_type"),
+                       nullable=False, default=None)
     snippet = db.Column(db.Text, nullable=True, default=None)
     timestamp = db.Column(db.DateTime, default=datetime.now)
     is_user_message = db.Column(db.Boolean, nullable=False)
 
+    context = relationship(
+        "DBChunk",
+        secondary=message_chunk_association,
+        backref="messages",
+        cascade="all, delete",
+    )
+    
     file_meta = relationship("DBFileMeta", back_populates="messages")
     user = relationship("DBUser", back_populates="messages")
 
@@ -86,13 +114,4 @@ class DBChunk(Base):
     file_meta = relationship("DBFileMeta", back_populates="chunks")
     user = relationship("DBUser", back_populates="chunks")
     
-    __table_args__ = (
-        db.Index(
-            'chunk_idx',
-            chunk_text,
-            postgresql_using='gin',
-            postgresql_ops={
-                'chunk_text': 'gin_trgm_ops'
-            }
-        ),
-    )
+    embedding = db.Column(Vector(1024))

@@ -20,6 +20,8 @@ class ChatCompletionRequest(BaseModel):
                      "effect. We recommend that each document should be a dict containing "
                      "\"title\" and \"text\" keys."),
     )
-    shortcut: ShortcutModel | None = Field(
+    file_id: UUID
+    action: Action
+    snippet: str | None = Field(
         default=None
     )

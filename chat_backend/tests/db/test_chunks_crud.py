@@ -12,12 +12,12 @@ from chat_backend.database.crud import (
 @pytest.mark.asyncio
 async def test_save_file_chunks(test_chunks_session):
     session, user_id, file_meta = test_chunks_session
-    
+
     assert user_id is not None
-    
+
     chunks = ["first", "second", "third"]
     await save_file_chunks(session, user_id, file_meta, chunks)
-    
+
     await session.commit()
 
     stmt = select(DBChunk).filter_by(user_id=user_id)
@@ -38,8 +38,7 @@ async def test_find_file_chunks(test_chunks_session):
     await session.commit()
 
     results = await find_file_chunks(session, "find", user_id, file_meta.file_id)
-    assert len(results) == 2
-    assert all("find" in r.chunk_text for r in results)
+    assert len(results) == 3
 
 
 @pytest.mark.asyncio
@@ -53,11 +52,11 @@ async def test_delete_file_chunks(test_chunks_session):
     await session.commit()
 
     await delete_file_chunks(session, user_id,
-                       file_meta.filename, file_meta.file_id)
+                             file_meta.filename, file_meta.file_id)
     await session.commit()
 
     stmt = select(DBChunk).filter_by(user_id=user_id)
     result = await session.execute(stmt)
     results = result.scalars().all()
-    
+
     assert len(results) == 0

@@ -9,22 +9,14 @@ class FileMeta(BaseModel):
     filename: str = Field(description="The name of the file.")
     is_indexed: bool
 
-    
+
 class FileModel(BaseModel):
     meta: FileMeta
     file: bytes
-    
-    
-class ShortcutAction(Enum):
+
+
+class Action(Enum):
+    default = "default"
     translate = "translate"
     explain = "explain"
     ask = "ask"
-    
-    
-class ShortcutModel(BaseModel):
-    content: str
-    action: ShortcutAction
-    
-    
-
-    

@@ -1,4 +1,4 @@
-from ..utils.llm import get_langchain_embeddings
+from chat_backend.utils.llm import get_langchain_embeddings
 from sklearn.metrics.pairwise import cosine_similarity
 
 

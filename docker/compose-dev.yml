@@ -36,7 +36,7 @@ services:
 
   postgres:
     container_name: educ_pg
-    image: postgres:14.8-alpine3.18
+    image: pgvector/pgvector:pg15
     command:
       - "postgres"
       - "-c"

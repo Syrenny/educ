@@ -43,6 +43,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ disabled, onSubmit, onChange }) =
 							className='scrollbar-custom max-h-[4lh] w-full resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent px-2.5 py-2.5 outline-none focus:ring-0 focus-visible:ring-0 max-sm:text-[16px] sm:px-3 text-gray-400'
 							onChange={handleChange}
 							onKeyDown={handleKeydown}
+                            placeholder='Спросите что-нибудь...'
 						></textarea>
 					</div>
 					<button

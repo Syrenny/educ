@@ -3,7 +3,7 @@ import re
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from chat_backend.rag.utils.llm import get_langchain_embeddings
+from chat_backend.utils.llm import get_langchain_embeddings
     
     
 class SemanticChunker:

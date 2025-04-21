@@ -6,7 +6,7 @@ const PrivateRoute = () => {
 	const location = useLocation()
 
     if (user === undefined) {
-		return <div>Loading...</div>
+		return <div></div>
 	}
 
     console.log("User in private route", user)

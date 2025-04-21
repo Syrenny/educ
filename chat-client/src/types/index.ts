@@ -6,20 +6,19 @@ export type FileMeta = {
     is_indexed: boolean
 }
 
-export type Message = {
-    file_meta: FileMeta
-    content: string
-    is_user: boolean
-    shortcut: Shortcut | null
-}
-
-export enum ShortcutAction {
+export enum Action {
+	Default = 'default',
 	Translate = 'translate',
 	Explain = 'explain',
 	Ask = 'ask',
 }
 
-export type Shortcut = {
-	content: string
-	action: ShortcutAction
+export type Message = {
+    file_meta: FileMeta
+    content: string
+    is_user: boolean
+    action: Action
+    snippet: string | null
 }
+
+

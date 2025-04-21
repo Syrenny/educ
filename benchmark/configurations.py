@@ -13,7 +13,7 @@ from langchain_core.embeddings.embeddings import Embeddings as LangchainEmbeddin
 
 from benchmark.common import Asphodel
 from chat_backend.settings import settings
-from chat_backend.rag.utils import llm as smolagents_llm
+from chat_backend.utils import llm as smolagents_llm
 
 
 class BaseRAG(ABC, Asphodel):
