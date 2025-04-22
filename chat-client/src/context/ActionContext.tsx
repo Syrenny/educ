@@ -2,8 +2,8 @@ import React, { createContext, useState, useContext, ReactNode } from 'react'
 import { Action } from '../types'
 
 interface ActionContextType {
-	action: Action
-    snippet: string | null
+	pdf_action: Action
+    pdf_snippet: string | null
 	setAction: (action: Action) => void
     setSnippet: (snippet: string) => void
 }
@@ -17,12 +17,14 @@ interface ActionContextProviderProps {
 export const ActionContextProvider: React.FC<ActionContextProviderProps> = ({
 	children,
 }) => {
-	const [action, setAction] = useState<Action>(Action.Default)
-    const [snippet, setSnippet] = useState<string>("")
+	const [pdf_action, setAction] = useState<Action>(Action.Default)
+    const [pdf_snippet, setSnippet] = useState<string>('')
 
 
 	return (
-		<ActionContext.Provider value={{ action, snippet, setAction, setSnippet }}>
+		<ActionContext.Provider
+			value={{ pdf_action, pdf_snippet, setAction, setSnippet }}
+		>
 			{children}
 		</ActionContext.Provider>
 	)

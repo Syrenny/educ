@@ -1,5 +1,7 @@
-from uuid import UUID
+import json
+from uuid import UUID, uuid4
 from contextlib import aclosing
+from datetime import datetime, timezone, timedelta
 
 from loguru import logger
 from fastapi import APIRouter, Depends
@@ -19,10 +21,23 @@ from chat_backend.database import (
     session_manager,
     find_file_chunks
 )
-from chat_backend.exceptions import NotIndexedError
+from chat_backend.exceptions import *
 
 
 router = APIRouter()
+
+# TODO Migrate to Redis
+stream_sessions: dict[str, dict] = {}
+
+
+def format_sse(data: str, event: str | None = None) -> str:
+    msg = ""
+    if event:
+        msg += f"event: {event}\n"
+    for line in data.splitlines():
+        msg += f"data: {line}\n"
+    msg += "\n"
+    return msg
 
 
 async def create_chat_completion(
@@ -41,11 +56,14 @@ async def create_chat_completion(
             user_id=user_id,
             file_id=file_id
         )
+        context = [chunk.chunk_text for chunk in db_chunks]
         
     try:
+        yield ": ping\n\n"  # Keep-alive comment line for SSE
+
         async for chunk in generate(
             query=query,
-            context=[chunk.text for chunk in db_chunks],
+            context=context,
             action=action,
             snippet=snippet
         ):
@@ -66,7 +84,11 @@ async def create_chat_completion(
                 exclude_none=True
             )
             
-            yield f"data: {json_chunk}\n\n"
+            yield format_sse(json_chunk, event="chunk")
+    except Exception as e:
+        # Send an error to the client via SSE if something went wrong
+        yield format_sse(str(e), event="error")
+        raise
     finally:
         async with session_manager.session() as session:
             await add_message(
@@ -80,15 +102,61 @@ async def create_chat_completion(
             )
             await session.commit()
 
-        yield "data: [DONE]\n\n"
+        yield format_sse(
+            json.dumps(context, ensure_ascii=False), 
+            event="context"
+        )
+        
+        yield format_sse("[DONE]", event="done")
+        
+        
+@router.post("/prepare_stream", tags=["Completions"])
+async def prepare_stream(
+    request: ChatCompletionRequest, 
+    user_id: UUID = Depends(get_user_id)
+    ) -> UUID:
+    stream_id = str(uuid4())
+
+    stream_sessions[stream_id] = {
+        "user_id": str(user_id),
+        "request": request,
+        "created_at": datetime.now(timezone.utc)
+    }
+
+    return stream_id
 
 
-@router.post("/v1/chat/completions", tags=["Completions"])
+def validate_stream_id(
+    user_id: UUID, 
+    stream_id: UUID
+    ) -> ChatCompletionRequest:
+    session_data = stream_sessions.get(str(stream_id))
+
+    if not session_data:
+        raise StreamNotFoundError
+
+    if session_data["user_id"] != str(user_id):
+        raise StreamNotFoundError
+
+    created_at: datetime = session_data["created_at"]
+    if datetime.now(timezone.utc) - created_at > timedelta(minutes=10):
+        del stream_sessions[str(stream_id)]
+        raise StreamExpiredError
+    
+    del stream_sessions[str(stream_id)]
+
+    return session_data["request"]
+
+
+@router.get("/v1/chat/completions", tags=["Completions"])
 async def chat_completions(
-    request: ChatCompletionRequest,
+    stream_id: UUID,
     user_id: UUID = Depends(get_user_id),
 ):
-
+    request = validate_stream_id(
+        user_id=user_id,
+        stream_id=stream_id
+    )
     file_id = request.file_id
     query = request.messages[-1]["content"]
 
@@ -123,7 +191,7 @@ async def chat_completions(
         ) as generator:
             async for chunk in generator:
                 yield chunk
-
+    
     return StreamingResponse(
         content=streaming_wrapper(),
         media_type="text/event-stream",

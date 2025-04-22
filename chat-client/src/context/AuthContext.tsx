@@ -10,7 +10,6 @@ import { setUser, getUser, removeUser } from '../utils/auth'
 
 interface User {
 	email: string
-	token: string
 }
 
 interface AuthContextType {
@@ -48,8 +47,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const login = async (email: string, password: string) => {
 		try {
 			const data = await loginUser(email, password)
-			const user = { email, token: data.token }
-			setUser(user.email, user.token)
+			const user = { email }
+			setUser(user.email)
 			setUserState(user)
 		} catch (err) {
 			console.error('Login error:', err)
@@ -60,8 +59,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const register = async (email: string, password: string) => {
 		try {
 			const data = await registerUser(email, password)
-			const user = { email, token: data.token }
-			setUser(user.email, user.token)
+			const user = { email }
+			setUser(user.email)
 			setUserState(user)
 		} catch (err) {
 			console.error('Registration error:', err)

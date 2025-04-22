@@ -1,8 +1,10 @@
-import type { Message } from '../../types'
-import { v4 as uuidv4 } from 'uuid'
-import IconLoading from '../icons/IconLoading'
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { v4 as uuidv4 } from 'uuid'
+import { Action, type Message } from '../../types'
+import IconLoading from '../icons/IconLoading'
+import ChunkItem from './ChunkItem'
 
 interface ChatMessageProps {
 	loading: boolean
@@ -10,6 +12,14 @@ interface ChatMessageProps {
 }
 
 const ChatMessage = ({ loading, message }: ChatMessageProps) => {
+	const [isOpen, setIsOpen] = useState(false)
+
+	const translate: Record<Action, string> = {
+		[Action.Translate]: 'Перевод',
+		[Action.Explain]: 'Объяснить',
+		[Action.Default]: '',
+		[Action.Ask]: '',
+	}
 
 	return (
 		<>
@@ -22,15 +32,40 @@ const ChatMessage = ({ loading, message }: ChatMessageProps) => {
 				>
 					<div className='flex w-full flex-col gap-2'>
 						<div className='flex w-full flex-row flex-nowrap'>
-							<div className='disabled w-full appearance-none whitespace-break-spaces text-wrap break-words bg-inherit px-5 py-3.5 text-gray-500 dark:text-gray-400'>
+							<div className='disabled w-full appearance-none whitespace-break-spaces text-wrap break-words bg-inherit px-5 py-3.5 text-gray-700 dark:text-gray-400'>
 								{message.content ? (
 									message.content.trim()
 								) : (
 									<div>
-										<h4 className='mb-1.5 mt-4 pl-0.5 text-sm text-gray-400 first:mt-0 dark:text-gray-500'>
-											#{message.action}
-										</h4>
-										{message.snippet?.trim()}
+										<button
+											className='py-1.5 mt-4 flex w-full items-center justify-between text-left'
+											onClick={() => setIsOpen(!isOpen)}
+										>
+											<span className='pl-0.5 italic ml-1.5'>
+												{translate[message.action]}
+											</span>
+											<span>{isOpen ? '▲' : '▼'}</span>
+										</button>
+										<div
+											className={`${
+												isOpen ? '' : 'cursor-pointer'
+											} relative min-h-[calc(2rem+theme(spacing[3.5])*2)] min-w-[60px] break-words rounded-2xl px-5 py-3.5 prose-pre:my-2 dark:from-gray-800/40 overflow-hidden`}
+											onClick={() => setIsOpen(true)}
+										>
+											<div
+												className={
+													isOpen
+														? ''
+														: 'line-clamp-[3]'
+												}
+											>
+												{message.snippet?.trim()}
+											</div>
+
+											{!isOpen && (
+												<div className='pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-white dark:from-gray-900 to-transparent  rounded-2xl' />
+											)}
+										</div>
 									</div>
 								)}
 							</div>
@@ -44,7 +79,7 @@ const ChatMessage = ({ loading, message }: ChatMessageProps) => {
 					data-message-role='assistant'
 					role='presentation'
 				>
-					<div className='relative min-h-[calc(2rem+theme(spacing[3.5])*2)] min-w-[60px] break-words rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 px-5 py-3.5 text-gray-600 prose-pre:my-2 dark:border-gray-800 dark:from-gray-800/40 dark:text-gray-300'>
+					<div className='relative min-h-[calc(2rem+theme(spacing[3.5])*2)] min-w-[60px] break-words rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 px-5 py-3.5 text-gray-600 prose-pre:my-2 dark:border-gray-800 dark:from-gray-800/40 dark:text-gray-300'>
 						{loading && message.content.length === 0 ? (
 							<IconLoading classNames='loading inline ml-2 first:ml-0' />
 						) : (
@@ -55,6 +90,9 @@ const ChatMessage = ({ loading, message }: ChatMessageProps) => {
 										children={String(message.content)}
 									/>
 								</div>
+								{message.context.length > 0 && (
+									<ChunkItem chunks={message.context} />
+								)}
 							</div>
 						)}
 					</div>

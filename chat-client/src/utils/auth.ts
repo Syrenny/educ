@@ -1,9 +1,8 @@
 const EDUC_USER = 'educ_user'
 
-export const setUser = (email: string, token: string) => {
+export const setUser = (email: string) => {
 	const user = {
 		email,
-		token,
 	}
 	localStorage.setItem(EDUC_USER, JSON.stringify(user))
 }

@@ -16,7 +16,7 @@ const Chat = ({ file_meta }: ChatProps) => {
 	const [input, setInput] = useState<string>('')
 	const [isLoading, setIsLoading] = useState(false)
 
-	const { action, snippet } = useAction()
+	const { pdf_action, pdf_snippet } = useAction()
 
 	const scrollToBottom = async () => {
 		if (chatContainerRef.current) {
@@ -47,76 +47,62 @@ const Chat = ({ file_meta }: ChatProps) => {
 	useEffect(() => {
 		const targetActions = [Action.Translate, Action.Explain]
 
-		if (targetActions.includes(action)) {
-			handleSendMessage()
+		if (targetActions.includes(pdf_action)) {
+			handleSendMessage(pdf_action)
 		}
-	}, [action])
+	}, [pdf_action])
 
-	const sendToServer = async (userMessage: Message) => {
-		try {
-			const reader = await createStreamChatCompletions(userMessage)
-			const decoder = new TextDecoder('utf-8')
+    const onData = (data: string) => {
+        const last = history.current[history.current.length - 1]
+        last.content += data
+        setMessages([...history.current])
+    }
 
-			while (true) {
-				const { done, value } = await reader.read()
-				if (done) break
+    const onDone = () => {
+        setIsLoading(false)
+    }
 
-				const chunk = decoder.decode(value, { stream: true })
-
-				chunk.split('\n').forEach(line => {
-					if (line.startsWith('data: ')) {
-						const data = line.replace('data: ', '').trim()
-
-						if (data === '[DONE]') return
-
-						try {
-							const json = JSON.parse(data)
-							const delta = json.choices?.[0]?.delta?.content
-							if (delta) {
-								const last =
-									history.current[history.current.length - 1]
-								last.content += delta
-								setMessages([...history.current])
-							}
-						} catch (err) {
-							console.warn('JSON parse error in stream', err)
-						}
-					}
-				})
-			}
-		} catch (error) {
-			console.error('Error fetching chat completion', error)
-		} finally {
-			setIsLoading(false)
-		}
-	}
-
-	const handleSendMessage = async () => {
-		const userMessage: Message = {
-			file_meta,
-			content: input,
-			is_user: true,
-			action: action,
-			snippet: snippet,
-		}
-
-		history.current.push(userMessage)
-
-		const newAssistantMessage: Message = {
-			file_meta,
-			content: '',
-			is_user: false,
-			action: action,
-			snippet: snippet,
-		}
-
-		history.current.push(newAssistantMessage)
-
+    const onContext = (context: string[]) => {
+        const last = history.current[history.current.length - 1]
+		last.context = context
 		setMessages([...history.current])
-		setInput('')
-		setIsLoading(true)
+    }
 
-		sendToServer(userMessage)
+	const handleSendMessage = async (act: Action) => {
+        if (!isLoading) {
+            const userMessage: Message = {
+				file_meta,
+				content: input,
+				is_user: true,
+				action: act,
+				snippet: pdf_snippet,
+				context: [],
+			}
+
+            history.current.push(userMessage)
+
+            const newAssistantMessage: Message = {
+				file_meta,
+				content: '',
+				is_user: false,
+				action: act,
+				snippet: pdf_snippet,
+				context: [],
+			}
+
+            history.current.push(newAssistantMessage)
+
+            setMessages([...history.current])
+            setInput('')
+            setIsLoading(true)
+
+            await createStreamChatCompletions(
+				userMessage,
+				onData,
+				onContext,
+				onDone
+			)
+        }
 	}
 
 	return (
@@ -137,7 +123,9 @@ const Chat = ({ file_meta }: ChatProps) => {
 				<ChatInput
 					disabled={isLoading}
 					onChange={setInput}
-					onSubmit={handleSendMessage}
+					onSubmit={() => {
+                        handleSendMessage(Action.Default)
+                    }}
 				/>
 			</div>
 		</div>

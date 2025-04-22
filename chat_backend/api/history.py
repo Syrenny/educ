@@ -31,7 +31,6 @@ async def history(
         user_id=user_id,
         file_id=file_id
     )
-    logger.debug(f"DBMessages: {db_messages}")
     if db_messages is None:
         raise FileNotFoundException
     return [
@@ -39,6 +38,7 @@ async def history(
             content=m.content,
             timestamp=m.timestamp,
             is_user=m.is_user_message,
+            context=[chunk.chunk_text for chunk in m.context],
             action=m.action,
             snippet=m.snippet
         ) for m in db_messages

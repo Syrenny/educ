@@ -63,12 +63,12 @@ const Home = () => {
 	return (
 		<div className='flex'>
 			<ToastContainer position='top-right' autoClose={3000} />
-			<div className='pl-3 pt-3 w-full lg:max-w-[250px] md:max-w-[200px]'>
+			<div className='pl-3 pt-3 w-full max-w-[200px] text-gray-700 dark:text-gray-300 select-none'>
 				<div className='flex'>
-					<h4 className='mb-1.5 mt-4 pl-0.5 text-2xl text-gray-400 first:mt-0 dark:text-gray-500'>
+					<h4 className='mb-1.5 mt-4 pl-0.5 text-2xl first:mt-0'>
 						Файлы
 					</h4>
-					<label className='base-tool relative flex justify-center items-center text-gray-100 ml-4 text-3xl cursor-pointer ml-auto mr-5'>
+					<label className='base-tool relative flex justify-center items-center text-gray-100 ml-auto text-3xl cursor-pointer mr-5'>
 						<input
 							disabled={uploading}
 							className='absolute hidden size-0'
@@ -77,12 +77,12 @@ const Home = () => {
 							onChange={handleFileUpload}
 							accept='.pdf'
 						/>
-						<IconPaperClip classNames='text-2xl justify-self-center text-gray-500 dark:text-gray-100' />
+						<IconPaperClip classNames='text-xl justify-self-center text-gray-500 dark:text-gray-100' />
 					</label>
 				</div>
 
-				{files.length === 0 ? (
-					<h4 className='text-center text-sm mr-2 text-gray-400 first:mt-0 dark:text-gray-500 mt-4'>
+				{files.length === 0 && !uploading ? (
+					<h4 className='text-center text-sm mr-2first:mt-0 mt-4'>
 						Нет файлов
 					</h4>
 				) : (
@@ -91,9 +91,7 @@ const Home = () => {
 
 				{uploading && (
 					<div className='flex justify-center items-center mb-1.5 mt-4 pl-0.5'>
-						<h4 className='text-sm mr-2 text-gray-400 first:mt-0 dark:text-gray-500'>
-							Загрузка
-						</h4>
+						<h4 className='text-sm mr-2 first:mt-'>Загрузка</h4>
 						<svg
 							aria-hidden='true'
 							className='w-3 h-3 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600'

@@ -2,7 +2,7 @@ from uuid import UUID
 
 from loguru import logger
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
@@ -181,8 +181,6 @@ async def find_file_chunks(
         embeddings = get_langchain_embeddings()
         query_vector = embeddings.embed_query(query)
         
-        logger.debug(f"Search: Type of query vector: {type(query_vector)}")
-        
         result = await session.execute(
             db.select(DBChunk).filter(
                 DBChunk.user_id == user_id,
@@ -257,13 +255,14 @@ async def add_message(
     content: str,
     is_user: bool,
     action: Action,
-    context: list[DBChunk] | None = None,
+    context: list[DBChunk] = [],
     snippet: str | None = None,
 ) -> DBMessage:
     new_message = DBMessage(
         user_id=user_id,
         file_id=file_id,
         content=content,
+        context=context,
         is_user_message=is_user,
         action=action.value,
         snippet=snippet
@@ -279,11 +278,11 @@ async def get_messages(
     session: AsyncSession,
     user_id: UUID,
     file_id: UUID
-) -> list[DBMessage] | None:
+) -> list[DBMessage]:
     result = await session.execute(
-        db.select(DBMessage).filter(
-            DBMessage.user_id == user_id,
-            DBMessage.file_id == file_id
-        ).order_by(DBMessage.timestamp)
+        db.select(DBMessage)
+        .filter(DBMessage.user_id == user_id, DBMessage.file_id == file_id)
+        .options(selectinload(DBMessage.context))
+        .order_by(DBMessage.timestamp)
     )
     return result.scalars().all()

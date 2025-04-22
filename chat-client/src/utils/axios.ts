@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { getUser } from './auth'
 import { toast } from 'react-toastify'
 
 const apiClient = axios.create({
@@ -9,14 +8,7 @@ const apiClient = axios.create({
 	},
 })
 
-// Automatically attach token
-apiClient.interceptors.request.use(config => {
-	const user = getUser()
-	if (user) {
-		config.headers.Authorization = `Bearer ${user["token"]}`
-	}
-	return config
-})
+apiClient.defaults.withCredentials = true
 
 apiClient.interceptors.response.use(
 	response => response,

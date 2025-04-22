@@ -78,13 +78,13 @@ async def add_file(
         raise SQLAlchemyUploadException
 
     await session.commit()
+    await session.close()
     
     # Start indexing
     for content, meta in zip(contents, files_meta):
         logger.debug(f"Adding indexation task for {meta.filename}")
         background_tasks.add_task(
             index_document,
-            session=session,
             user_id=user_id,
             file=bytes(content),
             meta=meta

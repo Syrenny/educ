@@ -16,6 +16,8 @@ class FileErrorMessages(Enum):
     TOO_BIG = "File size exceeds the maximum allowed size of {max_size} bytes"
     FILE_LIMIT_EXCEEDED = "File limit exceeded: maximum {max_files} files allowed"
     FILE_NOT_FOUND = "File not found"
+    STREAM_NOT_FOUND = "Stream not found"
+    STREAM_EXPIRED = "Stream session expired"
 
 
 class FileUploadException(HTTPException):
@@ -24,6 +26,16 @@ class FileUploadException(HTTPException):
     def __init__(self, error_message: FileErrorMessages, status_code: int, **kwargs):
         self.message = error_message.value.format(**kwargs)
         super().__init__(status_code=status_code, detail=self.message)
+        
+        
+class StreamExpiredError(FileUploadException):
+    def __init__(self):
+        super().__init__(FileErrorMessages.STREAM_EXPIRED, 410)
+        
+        
+class StreamNotFoundError(FileUploadException):
+    def __init__(self):
+        super().__init__(FileErrorMessages.STREAM_NOT_FOUND, 404)
         
         
 class NotIndexedError(FileUploadException):

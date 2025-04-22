@@ -5,7 +5,8 @@ import jwt
 import hmac
 import bcrypt
 import hashlib
-from fastapi import Depends, HTTPException
+from loguru import logger
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer
@@ -18,37 +19,36 @@ from chat_backend.settings import settings
 bearer_auth = HTTPBearer()
 
 
-def verify_access_token(token: str):
+def verify_access_token(token: str) -> dict:
+    decoded_token = jwt.decode(
+        token, 
+        settings.jwt_secret_key.get_secret_value(),
+        algorithms=[settings.jwt_algorithm]
+    )
+    return decoded_token
+
+
+def get_user_id(request: Request) -> UUID | None:
     """
-    Проверяет токен и возвращает его декодированные данные.
+    Extract and validate JWT token from access_token cookie.
+    Returns user_id (UUID) if token is valid, else raises HTTPException(401).
     """
+    token: str | None = None
+
+    if not token:
+        token = request.cookies.get("access_token")
+        
+    if not token:
+        raise HTTPException(status_code=401, detail="Token not provided")
+
     try:
-        decoded_token = jwt.decode(
-            token, 
-            settings.jwt_secret_key.get_secret_value(),
-            algorithms=[settings.jwt_algorithm]
-        )
-        return decoded_token
-    except jwt.PyJWTError:
-        return None
-
-
-def get_user_id(credentials: HTTPAuthorizationCredentials = Depends(bearer_auth)) -> UUID | None:
-    """
-    Check and retrieve authentication information from custom bearer token.
-
-    :param credentials Credentials provided by Authorization header
-    :type credentials: HTTPAuthorizationCredentials
-    :return: Decoded user_id or None if token is invalid
-    :rtype: TokenModel | None
-    """
-    token = credentials.credentials
-    decoded = verify_access_token(token)
-    
-    if not decoded:
-        raise HTTPException(status_code=401, detail="Неверный или просроченный токен")
-    
-    return UUID(decoded["id"])
+        payload = verify_access_token(token)
+        user_id = payload.get("id")
+        if not user_id:
+            raise ValueError("Missing user ID in token")
+        return UUID(user_id)
+    except (jwt.PyJWTError, ValueError):
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
 def generate_access_token(db_user: DBUser) -> str:
