@@ -49,14 +49,17 @@ async def create_chat_completion(
 ):
     full_message = ""
 
-    async with session_manager.session() as session:
-        db_chunks = await find_file_chunks(
-            session=session,
-            query=query,
-            user_id=user_id,
-            file_id=file_id
-        )
-        context = [chunk.chunk_text for chunk in db_chunks]
+    if action is not Action.translate:
+        async with session_manager.session() as session:
+            db_chunks = await find_file_chunks(
+                session=session,
+                query=query,
+                user_id=user_id,
+                file_id=file_id
+            )
+            context = [chunk.chunk_text for chunk in db_chunks]
+    else:
+        context, db_chunks = [], []
         
     try:
         yield ": ping\n\n"  # Keep-alive comment line for SSE

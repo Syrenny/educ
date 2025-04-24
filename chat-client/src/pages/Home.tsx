@@ -83,7 +83,6 @@ const Home = () => {
 
 				{files.length === 0 && !uploading ? (
 					<h4 className='text-center text-sm mr-2first:mt-0 mt-4'>
-						Нет файлов
 					</h4>
 				) : (
 					<FileList files={files} onDeleteFile={handleDeleteFile} />

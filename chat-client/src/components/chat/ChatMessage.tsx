@@ -16,7 +16,7 @@ const ChatMessage = ({ loading, message }: ChatMessageProps) => {
 
 	const translate: Record<Action, string> = {
 		[Action.Translate]: 'Перевод',
-		[Action.Explain]: 'Объяснить',
+		[Action.Explain]: 'Объяснение',
 		[Action.Default]: '',
 		[Action.Ask]: '',
 	}
