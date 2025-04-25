@@ -1,0 +1,11 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(client, "Пользователь")
+System(app, "Веб-приложение", "Помогает пользователю в обучении.")
+System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG.")
+
+Rel(client, app, "Отправляет вопросы/файлы.")
+Rel(app, llm_api, "Генерация ответов")
+
+@enduml

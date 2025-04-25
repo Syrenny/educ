@@ -1,0 +1,20 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "Пользователь", "Веб-клиент")
+
+System_Boundary(rag_sys, "Веб-приложение") {
+    Container(web, "Веб-интерфейс", "React", "Клиентский интерфейс для системы.")
+    Container(balancer, "Балансировщик нагрузки", "NGINX")
+    Container(server, "Сервер", "Python/FastAPI", "Обрабатывает HTTP-запросы от клиента и отправляет их в пайплайн.")
+    ContainerDb(db, "PostgreSQL")
+}
+System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG.")
+
+Rel(client, web, "Отправляет запросы через HTTP")
+Rel(web, balancer, "Вызывает пайплайн для обработки вопроса")
+Rel(balancer, server, "Вызывает пайплайн для обработки вопроса")
+Rel(server, llm_api, "Вызовы к внешнему API")
+Rel(server, db, "Вызовы к внешнему API")
+
+@enduml

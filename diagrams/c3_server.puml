@@ -1,0 +1,31 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+skinparam wrapWidth 180
+' skinparam linetype polyline
+LAYOUT_WITH_LEGEND()
+' LAYOUT_LANDSCAPE()
+
+Container(balancer, "Балансировщик нагрузки", "NGINX")
+
+System_Boundary(server_sys, "Сервер") {
+    Component(api, "Эндпоинты", "FastAPI", "Обрабатывает входящие HTTP-запросы от клиента.")
+    Component(file_storage, "Файловое хранилище", "Файловая система", "Сбор и хранение файлов пользователя.")
+    Component(indexation, "Индексация RAG", "Сервис", "Индексация файлов.")
+    Component(generation, "Генерация RAG", "Сервис", "Формирование ответа для пользователя")
+    Component(db_client, "CRUD", "SQLAlchemy", "Доступ к базе данных.")
+}
+
+ContainerDb(db, "PostgreSQL")
+System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG.")
+
+Rel(balancer, api, "HTTP-запросы")
+Rel(api, indexation, "Вызывает при загрузке файлов")
+Rel(api, generation, "Вызывает при запросе ответа")
+Rel(indexation, file_storage, "Сохраняет файлы")
+Rel(indexation, db_client, "Индексирует и сохраняет метаданные")
+Rel(generation, db_client, "Извлекает данные для ответа")
+Rel(generation, llm_api, "Запросы к модели")
+Rel(db_client, db, "Запросы к базе", "SQL")
+
+@enduml
