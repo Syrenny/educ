@@ -1,31 +1,39 @@
 @startuml
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
+AddElementTag("async", $fontColor="black")
+AddRelTag("async", $textColor="black", $lineColor="black", $lineStyle = DashedLine())
+
 skinparam wrapWidth 180
-' skinparam linetype polyline
+' skinparam linetype ortho
 LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
 ' LAYOUT_LANDSCAPE()
 
 Container(balancer, "Балансировщик нагрузки", "NGINX")
 
 System_Boundary(server_sys, "Сервер") {
-    Component(api, "Эндпоинты", "FastAPI", "Обрабатывает входящие HTTP-запросы от клиента.")
-    Component(file_storage, "Файловое хранилище", "Файловая система", "Сбор и хранение файлов пользователя.")
-    Component(indexation, "Индексация RAG", "Сервис", "Индексация файлов.")
+    Component(api, "API-сервис", "FastAPI", "Обрабатывает входящие HTTP-запросы от клиента")
+    Component(indexation, "Индексация RAG", "Сервис", "Индексация файлов")
     Component(generation, "Генерация RAG", "Сервис", "Формирование ответа для пользователя")
-    Component(db_client, "CRUD", "SQLAlchemy", "Доступ к базе данных.")
+    Component(file_storage, "Файловое хранилище", "Файловая система", "Сбор и хранение файлов пользователей")
+    Component(db_client, "CRUD", "SQLAlchemy", "Доступ к базе данных")
 }
 
-ContainerDb(db, "PostgreSQL")
-System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG.")
+System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG")
+ContainerDb(db, "База данных", "PostgreSQL", "Чанки, данные о пользователях, метаданные о файлах")
 
-Rel(balancer, api, "HTTP-запросы")
-Rel(api, indexation, "Вызывает при загрузке файлов")
-Rel(api, generation, "Вызывает при запросе ответа")
-Rel(indexation, file_storage, "Сохраняет файлы")
-Rel(indexation, db_client, "Индексирует и сохраняет метаданные")
-Rel(generation, db_client, "Извлекает данные для ответа")
-Rel(generation, llm_api, "Запросы к модели")
-Rel(db_client, db, "Запросы к базе", "SQL")
+Rel_Down(balancer, api, "HTTP-запросы")
+Rel_Left(api, indexation, "Вызывает при загрузке файлов", $tags="async")
+Rel(api, db_client, "Получение/хранение JWT-токенов", $tags="async")
+Rel_Right(api, generation, "Вызывает при запросе ответа", $tags="async")
+Rel_Down(indexation, file_storage, "Сохраняет файлы", $tags="async")
+Rel(indexation, db_client, "Сохраняет чанки", $tags="async")
+Rel(generation, db_client, "Поиск чанков для ответа", $tags="async")
+Rel(generation, llm_api, "Запросы к модели", $tags="async")
+Rel(db_client, db, "Запросы к базе", $tags="async")
+
+SHOW_LEGEND()
 
 @enduml
