@@ -1,6 +1,10 @@
 @startuml
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
+skinparam wrapWidth 180
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
 Person(client, "Пользователь", "Веб-клиент")
 
 System_Boundary(rag_sys, "Веб-приложение") {
@@ -14,7 +18,7 @@ System_Ext(llm_api, "Большая языковая модель", "Обраб�
 Rel(client, web, "Отправляет запросы через HTTP")
 Rel(web, balancer, "Вызывает пайплайн для обработки вопроса")
 Rel(balancer, server, "Вызывает пайплайн для обработки вопроса")
-Rel(server, llm_api, "Вызовы к внешнему API")
-Rel(server, db, "Вызовы к внешнему API")
+Rel_R(server, llm_api, "Вызовы к внешнему API")
+Rel_D(server, db, "Вызовы к внешнему API")
 
 @enduml

@@ -5,11 +5,8 @@ AddElementTag("async", $fontColor="black")
 AddRelTag("async", $textColor="black", $lineColor="black", $lineStyle = DashedLine())
 
 skinparam wrapWidth 180
-' skinparam linetype ortho
 LAYOUT_WITH_LEGEND()
 LAYOUT_TOP_DOWN()
-
-' LAYOUT_LANDSCAPE()
 
 Container(balancer, "Балансировщик нагрузки", "NGINX")
 
@@ -22,18 +19,18 @@ System_Boundary(server_sys, "Сервер") {
 }
 
 System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG")
+
 ContainerDb(db, "База данных", "PostgreSQL", "Чанки, данные о пользователях, метаданные о файлах")
 
-Rel_Down(balancer, api, "HTTP-запросы")
+Rel_Down(balancer, api, "HTTP-запросы", $tags="async")
 Rel_Left(api, indexation, "Вызывает при загрузке файлов", $tags="async")
 Rel(api, db_client, "Получение/хранение JWT-токенов", $tags="async")
-Rel_Right(api, generation, "Вызывает при запросе ответа", $tags="async")
-Rel_Down(indexation, file_storage, "Сохраняет файлы", $tags="async")
+Rel_Down(api, generation, "Вызывает при запросе ответа", $tags="async")
+Rel_Down(api, file_storage, "Сохраняет файлы", $tags="async")
 Rel(indexation, db_client, "Сохраняет чанки", $tags="async")
-Rel(generation, db_client, "Поиск чанков для ответа", $tags="async")
-Rel(generation, llm_api, "Запросы к модели", $tags="async")
+Rel_L(generation, db_client, "Поиск чанков для ответа", $tags="async")
+Rel_Down(generation, llm_api, "Запросы к модели", $tags="async")
 Rel(db_client, db, "Запросы к базе", $tags="async")
 
 SHOW_LEGEND()
-
 @enduml
