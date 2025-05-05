@@ -4,41 +4,38 @@
 AddElementTag("async", $fontColor="black")
 AddRelTag("async", $textColor="black", $lineColor="black", $lineStyle = DashedLine())
 
-skinparam wrapWidth 180
+skinparam wrapWidth 250
 LAYOUT_WITH_LEGEND()
 LAYOUT_TOP_DOWN()
 
 System_Boundary(rag_gen, "Генерация") {
     Component(rewriter, "Rewriter", "Поиск", "Переписывает запрос для повышения релевантности поиска")
-    Component(retriever, "Retriever", "Поиск", "Извлекает наиболее релевантные чанки из базы данных")
+    Component(retriever, "Retriever", "Поиск", "Векторизует запрос и извлекает наиболее релевантные чанки из базы данных")
     Component(consolidator, "Consolidator", "Микс", "Собирает набор чанков и исходный вопрос в окончательный промпт")
     Component(reader, "Reader", "LLM", "Генерирует финальный ответ на основе промпта")
 }
 
 System_Boundary(rag_index, "Индексация") {
     Component(preprocess, "Preprocessing", "Парсинг", "Парсит текст из .pdf файлов")
-    Component(chunker, "Chunker", "Разбиение текста", "Делит очищенный текст на логические чанки")
+    Component(chunker, "Chunker", "Разбиение текста", "Делит очищенный текст на логические чанки и векторизует их")
 }
-
-Component(embedding, "Эмбеддер", "Модель", "Преобразует чанки и запрос в векторные представления")
 
 System_Ext(db_client, "CRUD", "Доступ к базе данных")
 System_Ext(api, "API-сервис", "Обрабатывает входящие HTTP-запросы от клиента")
 System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG")
 
 ' Индексация
-Rel_D(api, preprocess, "Загрузка файла для обработки", $tags="async")
+Rel_L(api, preprocess, "Загрузка файла для обработки", $tags="async")
 Rel_D(preprocess, chunker, "Очищенный текст", $tags="async")
-Rel(chunker, embedding, "Сформированные чанки", $tags="async")
-Rel_D(embedding, db_client, "Поиск/Добавление индексированных чанков", $tags="async")
+Rel_R(chunker, db_client, "Добавление векторизованных чанков и метаданных", $tags="async")
 
 ' Генерация
-Rel_D(api, rewriter, "Пользовательский запрос", $tags="async")
+Rel_R(api, rewriter, "Пользовательский запрос", $tags="async")
 Rel_D(rewriter, retriever, "Переформулированный запрос", $tags="async")
-Rel_D(retriever, embedding, "Векторный поиск чанков по БД", $tags="async")
+Rel_R(retriever, db_client, "Векторный поиск чанков по БД", $tags="async")
 Rel_D(retriever, consolidator, "Набор релевантных чанков", $tags="async")
-Rel(consolidator, reader, "Формирует окончательный промпт", $tags="async")
-Rel(reader, llm_api, "Вызов LLM для генерации ответа", $tags="async")
+Rel_D(consolidator, reader, "Формирует окончательный промпт", $tags="async")
+Rel_L(reader, llm_api, "Вызов LLM для генерации ответа", $tags="async")
 
 SHOW_LEGEND()
 @enduml

@@ -1,24 +1,24 @@
 @startuml
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-skinparam wrapWidth 180
+skinparam wrapWidth 250
 LAYOUT_WITH_LEGEND()
 LAYOUT_TOP_DOWN()
 
-Person(client, "Пользователь", "Веб-клиент")
+Person(client, "Пользователь", "Взаимодействует с системой через веб-интерфейс")
 
 System_Boundary(rag_sys, "Веб-приложение") {
-    Container(web, "Веб-интерфейс", "React", "Клиентский интерфейс для системы.")
-    Container(balancer, "Балансировщик нагрузки", "NGINX")
-    Container(server, "Сервер", "Python/FastAPI", "Обрабатывает HTTP-запросы от клиента и отправляет их в пайплайн.")
+    Container(web, "Веб-интерфейс", "React", "Клиентский часть системы.")
+    Container(balancer, "Балансировщик нагрузки", "NGINX", "Перенаправляет входящие HTTP-запросы")
+    Container(server, "Сервер", "Python/FastAPI", "Обрабатывает клиентские запросы и координирует работу компонентов пайплайна")
     ContainerDb(db, "PostgreSQL")
 }
-System_Ext(llm_api, "Большая языковая модель", "Обрабатывает части пайплайна RAG.")
+System_Ext(llm_api, "Большая языковая модель", "Обрабатывает текстовые промпты и возвращает ответы")
 
-Rel(client, web, "Отправляет запросы через HTTP")
-Rel(web, balancer, "Вызывает пайплайн для обработки вопроса")
-Rel(balancer, server, "Вызывает пайплайн для обработки вопроса")
-Rel_R(server, llm_api, "Вызовы к внешнему API")
-Rel_D(server, db, "Вызовы к внешнему API")
+Rel_R(client, web, "Вводит запросы")
+Rel(web, balancer, "Перенаправляет запросы к серверу")
+Rel(balancer, server, "Делегирует обработку запросов")
+Rel_R(server, llm_api, "Обращается к внешней языковой модели")
+Rel_D(server, db, "Чтение и запись данных в базу")
 
 @enduml

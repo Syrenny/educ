@@ -1,7 +1,7 @@
 @startuml
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
-skinparam wrapWidth 180
+skinparam wrapWidth 300
 LAYOUT_WITH_LEGEND()
 LAYOUT_TOP_DOWN()
 
