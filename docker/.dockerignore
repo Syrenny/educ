@@ -1,9 +1,8 @@
 **
 
 !requirements.txt
-!chat_backend
+!server
 
 !.env
-!.env.test
 !.python-version
 !pytest.ini
