@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
-import { deleteFile, getFiles, uploadFile } from '../api/api'
-import FileList from '../components/FileList'
-import { PDFViewer } from '../components/PdfViewer'
-import Chat from '../components/chat/ChatWindow'
-import { useParams, useNavigate } from 'react-router-dom'
-import IconPaperClip from '../components/icons/IconPaperClip'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { deleteFile, getFiles, uploadFile } from '../api/api'
+import Chat from '../components/chat/ChatWindow'
+import FileList from '../components/FileList'
+import IconPaperClip from '../components/icons/IconPaperClip'
+import { PDFViewer } from '../components/viewer/PdfViewer'
 
 import type { FileMeta } from '../types'
 
 const Home = () => {
-    const { file_id } = useParams()
+	const { file_id } = useParams()
 	const navigate = useNavigate()
 
 	const [files, setFiles] = useState<FileMeta[]>([])
@@ -53,7 +53,7 @@ const Home = () => {
 			if (success) {
 				setFiles(prev => prev.filter(file => file.file_id !== fileId))
 				if (selectedFile && selectedFile.file_id === fileId)
-                    navigate(`/`)
+					navigate(`/`)
 			}
 		} catch (error) {
 			console.error('Error deleting file:', error)
@@ -82,8 +82,7 @@ const Home = () => {
 				</div>
 
 				{files.length === 0 && !uploading ? (
-					<h4 className='text-center text-sm mr-2first:mt-0 mt-4'>
-					</h4>
+					<h4 className='text-center text-sm mr-2first:mt-0 mt-4'></h4>
 				) : (
 					<FileList files={files} onDeleteFile={handleDeleteFile} />
 				)}

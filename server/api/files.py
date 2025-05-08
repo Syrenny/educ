@@ -224,7 +224,10 @@ async def download_file_using_link(
     return StreamingResponse(
         iter([file_model.file]),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="{db_file.filename}"'},
+        headers={
+            "Content-Disposition": f'inline; filename="{db_file.filename}"',
+            "Content-Length": str(len(file_model.file)),
+        },
     )
 
 
