@@ -1,7 +1,14 @@
 # Documentation: https://docs.astral.sh/uv/guides/integration/docker/#configuring-watch-with-docker-compose
 # Example source: https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
 
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+
+RUN apt update && apt install -y \
+    python3.11 python3.11-dev python3.11-venv python3-pip \
+    curl git build-essential libffi-dev \
+    && ln -sf python3.11 /usr/bin/python3 \
+    && python3 -m pip install --upgrade pip \
+    && python3 -m pip install uv
 
 WORKDIR /workspace
 ENV UV_COMPILE_BYTECODE=1

@@ -1,5 +1,6 @@
 import hmac
 import time
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile
@@ -29,6 +30,19 @@ from server.file_storage import FileReader, LocalFileStorage
 from server.models import FileMeta, FileModel
 from server.rag import index_document
 from server.security import generate_signature, get_user_id
+
+
+def safe_content_disposition(filename: str, fallback_name: str = "download.bin") -> str:
+    """
+    Генерирует безопасный заголовок Content-Disposition для вложения (attachment),
+    корректно обрабатывает unicode-имена файлов.
+
+    Пример:
+        Content-Disposition: attachment; filename="download.bin"; filename*=UTF-8''%D0%9F%D1%80%D0%B8%D0%BC%D0%B5%D1%80.txt
+    """
+    quoted = quote(filename)
+    return f"attachment; filename=\"{fallback_name}\"; filename*=UTF-8''{quoted}"
+
 
 router = APIRouter()
 reader = FileReader()
@@ -159,7 +173,7 @@ async def download_file(
         iter([file_model.file]),
         media_type="application/octet-stream",
         headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{db_file.filename}"
+            "Content-Disposition": safe_content_disposition(filename=db_file.filename)
         },
     )
 
@@ -227,7 +241,7 @@ async def download_file_using_link(
         iter([file_model.file]),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"inline; filename*=UTF-8''{db_file.filename}",
+            "Content-Disposition": safe_content_disposition(db_file.filename),
             "Content-Length": str(len(file_model.file)),
         },
     )

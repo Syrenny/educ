@@ -8,6 +8,8 @@ services:
         ports:
             - 8000:8000
         environment:
+            - NVIDIA_VISIBLE_DEVICE=all
+            - NVIDIA_DRIVER_CAPABILITIES=all
             - HF_HOME=/root/.cache/huggingface
         depends_on:
             postgres:

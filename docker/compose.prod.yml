@@ -8,6 +8,8 @@ services:
         ports:
             - 7256:8000
         environment:
+            - NVIDIA_VISIBLE_DEVICE=all
+            - NVIDIA_DRIVER_CAPABILITIES=all
             - HF_HOME='/root/.cache/huggingface'
             - LLM_API_KEY=${LLM_API_KEY}
             - JWT_SECRET_KEY=${JWT_SECRET_KEY}
