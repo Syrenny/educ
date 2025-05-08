@@ -1,6 +1,16 @@
 import type { Message } from '../types'
 import apiClient from '../utils/axios'
 
+const buildApiUrl = (path: string): string => {
+	const rawBase = process.env.REACT_APP_API_BASE
+
+	const base = rawBase ? rawBase : `${window.location.origin}`
+
+	const url = new URL(path, base)
+
+	return url.toString()
+}
+
 export const loginUser = async (email: string, password: string) => {
 	const response = await apiClient.post(
 		'/api/login_user',
@@ -68,12 +78,7 @@ export const getURL = async (fileId: string): Promise<string> => {
 	const response = await apiClient.get(`/api/files/${fileId}/signed-url`)
 	const relativeURL = response.data
 
-	const fullURL = new URL(
-		`/api${relativeURL}`,
-		apiClient.defaults.baseURL!
-	).toString()
-
-	return fullURL
+	return buildApiUrl(`/api${relativeURL}`)
 }
 
 export const getStreamID = async (query: Message): Promise<string> => {
@@ -99,15 +104,11 @@ export const createStreamChatCompletions = async (
 	onError?: (e: any) => void
 ) => {
 	const stream_id = await getStreamID(query)
-	const eventSource = new EventSource(
-		new URL(
-			`/api/v1/chat/completions?stream_id=${stream_id}`,
-			process.env.REACT_APP_API_BASE || ''
-		).toString(),
-		{
-			withCredentials: true,
-		}
-	)
+	const url = buildApiUrl(`/api/v1/chat/completions?stream_id=${stream_id}`)
+
+	const eventSource = new EventSource(url, {
+		withCredentials: true,
+	})
 
 	eventSource.addEventListener('chunk', event => {
 		try {
