@@ -2,8 +2,9 @@ from enum import Enum
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, PostgresDsn, computed_field
 from pydantic.types import SecretStr
+from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,11 +24,24 @@ class Secrets(BaseSettings):
     default_admin_email: SecretStr
     default_admin_password: SecretStr
 
-    # Full URL to connect DB
-    sqlalchemy_url: SecretStr
-
     # Secret key for temporary url generating
     sign_secret_key: SecretStr
+
+    # PG settings
+    postgres_db: SecretStr
+    postgres_user: SecretStr
+    postgres_password: SecretStr
+
+    @computed_field
+    def sqlalchemy_url(self) -> PostgresDsn:
+        return MultiHostUrl.build(
+            scheme="postgresql+asyncpg",
+            username=self.postgres_user.get_secret_value(),
+            password=self.postgres_password.get_secret_value(),
+            host="educ_pg",
+            port=5432,
+            path=self.postgres_db.get_secret_value(),
+        )
 
 
 class Config(BaseModel):

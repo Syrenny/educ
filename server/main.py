@@ -16,7 +16,7 @@ from server.database import session_manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if config.env is not EnvMode.test:
-        await session_manager.init_db(secrets.sqlalchemy_url.get_secret_value())
+        await session_manager.init_db(str(secrets.sqlalchemy_url))
     yield
     await session_manager.close()
 

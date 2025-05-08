@@ -52,7 +52,6 @@ jobs:
                   JWT_SECRET_KEY: ${{secrets.JWT_SECRET_KEY}}
                   DEFAULT_ADMIN_EMAIL: ${{secrets.DEFAULT_ADMIN_EMAIL}}
                   DEFAULT_ADMIN_PASSWORD: ${{secrets.DEFAULT_ADMIN_PASSWORD}}
-                  SQLALCHEMY_URL: ${{secrets.SQLALCHEMY_URL}}
                   SIGN_SECRET_KEY: ${{secrets.SIGN_SECRET_KEY}}
                   POSTGRES_DB: ${{secrets.POSTGRES_DB}}
                   POSTGRES_USER: ${{secrets.POSTGRES_USER}}
@@ -62,9 +61,11 @@ jobs:
                   echo "JWT_SECRET_KEY=$JWT_SECRET_KEY" >> ./docker/.env
                   echo "DEFAULT_ADMIN_EMAIL=$DEFAULT_ADMIN_EMAIL" >> ./docker/.env
                   echo "DEFAULT_ADMIN_PASSWORD=$DEFAULT_ADMIN_PASSWORD" >> ./docker/.env
-                  echo "SQLALCHEMY_URL=$SQLALCHEMY_URL" >> ./docker/.env
                   echo "SIGN_SECRET_KEY=$SIGN_SECRET_KEY" >> ./docker/.env
                   echo "POSTGRES_DB=$POSTGRES_DB" >> ./docker/.env
                   echo "POSTGRES_USER=$POSTGRES_USER" >> ./docker/.env
                   echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> ./docker/.env
                   docker compose -f ./docker/compose.prod.yml up -d --build
+
+            - name: Clean up .env file
+              run: rm ./docker/.env
