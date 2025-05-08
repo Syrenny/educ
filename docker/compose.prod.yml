@@ -8,13 +8,13 @@ services:
         ports:
             - 7256:8000
         environment:
-            HF_HOME: '/root/.cache/huggingface'
-            LLM_API_KEY: ${LLM_API_KEY}
-            JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-            DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL}
-            DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD}
-            SQLALCHEMY_URL: ${SQLALCHEMY_URL}
-            SIGN_SECRET_KEY: ${SIGN_SECRET_KEY}
+            - HF_HOME='/root/.cache/huggingface'
+            - LLM_API_KEY=${LLM_API_KEY}
+            - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+            - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL}
+            - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+            - SQLALCHEMY_URL=${SQLALCHEMY_URL}
+            - SIGN_SECRET_KEY=${SIGN_SECRET_KEY}
         depends_on:
             postgres:
                 condition: service_healthy
@@ -70,10 +70,10 @@ services:
             - '-c'
             - 'pg_stat_statements.track=all'
         environment:
-            PGDATA: '/var/lib/postgresql/data/pgdata'
-            POSTGRES_DB: ${POSTGRES_DB}
-            POSTGRES_USER: ${POSTGRES_USER}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            - PGDATA='/var/lib/postgresql/data/pgdata'
+            - POSTGRES_DB=${POSTGRES_DB}
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
         volumes:
             - init-database:/docker-entrypoint-initdb.d
             - educ-data:/var/lib/postgresql/data
