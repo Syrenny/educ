@@ -204,12 +204,17 @@ async def download_file_using_link(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
+    db_file = await find_file_meta(session, db_user.id, file_id)
+
+    if db_file is None:
+        raise FileNotFoundException()
+
     file_model = await storage.read(
         db_user.id,
         FileMeta(
             file_id=file_id,
-            filename="fake_filename",  # Fake
-            is_indexed=True,  # Fake
+            filename=db_file.filename,
+            is_indexed=db_file.is_indexed,
         ),
     )
 
@@ -219,6 +224,7 @@ async def download_file_using_link(
     return StreamingResponse(
         iter([file_model.file]),
         media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{db_file.filename}"'},
     )
 
 

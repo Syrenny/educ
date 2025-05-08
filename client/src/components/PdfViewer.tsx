@@ -41,6 +41,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ meta }) => {
 		pdfUrl
 	)}`
 
+    console.debug(viewerUrl)
+
 	return (
 		<iframe
 			src={viewerUrl}

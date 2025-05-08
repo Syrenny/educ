@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 from datetime import datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 import bcrypt
@@ -50,9 +51,9 @@ def generate_access_token(db_user: DBUser) -> str:
     """
     Создает JWT токен с переданными данными и временем жизни.
     """
-    to_encode = {"id": str(db_user.id)}
+    to_encode: dict[str, Any] = {"id": str(db_user.id)}
     expire = datetime.now() + timedelta(minutes=config.jwt_token_expires_minutes)
-    to_encode.update({"exp": str(expire)})
+    to_encode.update({"exp": int(expire.timestamp())})
 
     encoded_jwt = jwt.encode(
         to_encode,

@@ -14,7 +14,7 @@ class EnvMode(str, Enum):
 
 
 class Secrets(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file="docker/.env", env_file_encoding="utf-8")
 
     llm_api_key: SecretStr
     jwt_secret_key: SecretStr

@@ -21,6 +21,7 @@ async def history(
         raise FileNotFoundException from None
     return [
         Message(
+            id=m.id,
             content=m.content,
             timestamp=m.timestamp,
             is_user=m.is_user_message,

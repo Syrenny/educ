@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import { createStreamChatCompletions, getHistory } from '../../api/api'
 import { useAction } from '../../context/ActionContext'
-import { FileMeta, Message, Action } from '../../types'
+import { Action, FileMeta, Message } from '../../types'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
 
@@ -52,26 +53,27 @@ const Chat = ({ file_meta }: ChatProps) => {
 		}
 	}, [pdf_action])
 
-    const onData = (data: string) => {
-        const last = history.current[history.current.length - 1]
-        last.content += data
-        setMessages([...history.current])
-    }
+	const onData = (data: string) => {
+		const last = history.current[history.current.length - 1]
+		last.content += data
+		setMessages([...history.current])
+	}
 
-    const onDone = () => {
-        setIsLoading(false)
-    }
+	const onDone = () => {
+		setIsLoading(false)
+	}
 
-    const onContext = (context: string[]) => {
-        const last = history.current[history.current.length - 1]
+	const onContext = (context: string[]) => {
+		const last = history.current[history.current.length - 1]
 		last.context = context
 		setMessages([...history.current])
-    }
+	}
 
 	const handleSendMessage = async (act: Action) => {
-        if (!isLoading) {
-            const userMessage: Message = {
-				file_meta,
+		if (!isLoading) {
+			const userMessage: Message = {
+				id: uuidv4(),
+				file_meta: file_meta,
 				content: input,
 				is_user: true,
 				action: act,
@@ -79,10 +81,11 @@ const Chat = ({ file_meta }: ChatProps) => {
 				context: [],
 			}
 
-            history.current.push(userMessage)
+			history.current.push(userMessage)
 
-            const newAssistantMessage: Message = {
-				file_meta,
+			const newAssistantMessage: Message = {
+				id: uuidv4(),
+				file_meta: file_meta,
 				content: '',
 				is_user: false,
 				action: act,
@@ -90,19 +93,19 @@ const Chat = ({ file_meta }: ChatProps) => {
 				context: [],
 			}
 
-            history.current.push(newAssistantMessage)
+			history.current.push(newAssistantMessage)
 
-            setMessages([...history.current])
-            setInput('')
-            setIsLoading(true)
+			setMessages([...history.current])
+			setInput('')
+			setIsLoading(true)
 
-            await createStreamChatCompletions(
+			await createStreamChatCompletions(
 				userMessage,
 				onData,
 				onContext,
 				onDone
 			)
-        }
+		}
 	}
 
 	return (
@@ -114,7 +117,11 @@ const Chat = ({ file_meta }: ChatProps) => {
 				<div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl xl:pt-10'>
 					<div className='flex h-max flex-col gap-8 pb-52'>
 						{messages.map((msg, index) => (
-							<ChatMessage message={msg} loading={isLoading} />
+							<ChatMessage
+								key={msg.id}
+								message={msg}
+								loading={isLoading}
+							/>
 						))}
 					</div>
 				</div>
@@ -124,8 +131,8 @@ const Chat = ({ file_meta }: ChatProps) => {
 					disabled={isLoading}
 					onChange={setInput}
 					onSubmit={() => {
-                        handleSendMessage(Action.Default)
-                    }}
+						handleSendMessage(Action.Default)
+					}}
 				/>
 			</div>
 		</div>

@@ -14,6 +14,7 @@ export enum Action {
 }
 
 export type Message = {
+    id: string
 	file_meta: FileMeta
 	content: string
 	is_user: boolean

@@ -36,6 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 prefix = "/api"
 app.include_router(completions_router, prefix=prefix)
 app.include_router(files_router, prefix=prefix)

@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from io import BytesIO
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import aiofiles
 import fitz
@@ -66,7 +66,7 @@ class LocalFileStorage:
 
     async def list(self, user_id: UUID) -> list[str]:
         """List all files for a given user_id."""
-        user_dir = self._make_path(file_id=UUID("123"), user_id=user_id).parent
+        user_dir = self._make_path(file_id=uuid4(), user_id=user_id).parent
 
         if not user_dir.exists() or not user_dir.is_dir():
             return []
