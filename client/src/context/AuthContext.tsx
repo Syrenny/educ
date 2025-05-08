@@ -1,12 +1,12 @@
-import React, {
+import {
 	createContext,
-	useContext,
-	useState,
-	useEffect,
 	ReactNode,
+	useContext,
+	useEffect,
+	useState,
 } from 'react'
 import { loginUser, registerUser } from '../api/api'
-import { setUser, getUser, removeUser } from '../utils/auth'
+import { getUser, removeUser, setUser } from '../utils/auth'
 
 interface User {
 	email: string
@@ -46,8 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const login = async (email: string, password: string) => {
 		try {
 			const data = await loginUser(email, password)
-			const user = { email }
-			setUser(user.email)
+			setUser(email)
 			setUserState(user)
 		} catch (err) {
 			console.error('Login error:', err)
@@ -58,8 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const register = async (email: string, password: string) => {
 		try {
 			const data = await registerUser(email, password)
-			const user = { email }
-			setUser(user.email)
+			setUser(email)
 			setUserState(user)
 		} catch (err) {
 			console.error('Registration error:', err)

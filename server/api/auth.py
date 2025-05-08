@@ -31,12 +31,19 @@ async def register_user(
             status_code=400, detail="Пользователь с таким email уже существует"
         ) from None
     db_user = await create_user(session, user.email, hash_password(user.password))
+
+    await session.flush()
+
     if db_user is None:
         raise HTTPException(
             status_code=500, detail="Error while creating user"
         ) from None
+
     token = generate_access_token(db_user)
+
     await create_token(session, db_user.id, token)
+
+    await session.commit()
     response.set_cookie(
         key="access_token",
         value=token,

@@ -158,7 +158,9 @@ async def download_file(
     return StreamingResponse(
         iter([file_model.file]),
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{db_file.filename}"'},
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{db_file.filename}"
+        },
     )
 
 
@@ -225,7 +227,7 @@ async def download_file_using_link(
         iter([file_model.file]),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'inline; filename="{db_file.filename}"',
+            "Content-Disposition": f"inline; filename*=UTF-8''{db_file.filename}",
             "Content-Length": str(len(file_model.file)),
         },
     )

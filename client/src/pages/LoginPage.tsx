@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {
 	const { login } = useAuth()
-	const [email, setEmail] = useState('adm@adm.ru')
-	const [password, setPassword] = useState('123')
+	const [email, setEmail] = useState('')
+	const [password, setPassword] = useState('')
 	const [error, setError] = useState<string | null>(null)
 
 	const navigate = useNavigate()
@@ -15,24 +15,25 @@ const LoginPage = () => {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setError(null)
-
-		try {
-			await login(email, password)
-			navigate(from, { replace: true })
-		} catch (err: any) {
-			console.error(err)
-			if (err.response && err.response.data?.detail) {
-				setError(err.response.data.detail)
-			} else {
-				setError('Login failed. Try again.')
+		if (email.length > 0 && password.length > 0) {
+			try {
+				await login(email, password)
+				navigate(from, { replace: true })
+			} catch (err: any) {
+				console.error(err)
+				if (err.response && err.response.data?.detail) {
+					setError(err.response.data.detail)
+				} else {
+					setError('Login failed. Try again.')
+				}
 			}
 		}
 	}
 
-
 	return (
 		<div className='flex min-h-full flex-col justify-center px-6 py-12 lg:px-8 dark:bg-gray-700 h-screen text-gray-300'>
 			<div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
+				<h4 className='mb-5 text-2xl first:mt-0'>Авторизация</h4>
 				<form className='space-y-6' onSubmit={handleSubmit}>
 					{error && <p className='text-sm text-red-600'>{error}</p>}
 
@@ -89,6 +90,17 @@ const LoginPage = () => {
 						</button>
 					</div>
 				</form>
+				<div className='mt-4'>
+					<button
+						onClick={(event) => {
+                            event.preventDefault()
+							navigate('/register')
+						}}
+						className='flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+					>
+						Регистрация
+					</button>
+				</div>
 			</div>
 		</div>
 	)
