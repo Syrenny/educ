@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {
-	const { login, user, loading } = useAuth()
+	const { login } = useAuth()
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [error, setError] = useState<string | null>(null)
@@ -18,10 +18,8 @@ const LoginPage = () => {
 		if (email.length > 0 && password.length > 0) {
 			try {
 				await login(email, password)
-				console.log(loading, user)
 				navigate(from, { replace: true })
 			} catch (err: any) {
-				console.error(err)
 				if (err.response && err.response.data?.detail) {
 					setError(err.response.data.detail)
 				} else {

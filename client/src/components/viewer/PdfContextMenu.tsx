@@ -53,12 +53,6 @@ export const PDFContextMenu: React.FC = () => {
 		>
 			<button
 				className='block w-full px-4 py-2 text-left hover:bg-gray-100'
-				onClick={() => handleAction(Action.Ask)}
-			>
-				Задать вопрос
-			</button>
-			<button
-				className='block w-full px-4 py-2 text-left hover:bg-gray-100'
 				onClick={() => handleAction(Action.Explain)}
 			>
 				Объяснить

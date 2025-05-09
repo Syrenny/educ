@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				const data = await fetchCurrentUser()
 				setUserState({ email: data.email })
 			} catch (error) {
+				setUserState(null)
 				console.error('Invalid token or failed to fetch user:', error)
 			} finally {
 				setLoading(false)
@@ -45,22 +46,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	}, [])
 
 	const login = async (email: string, password: string) => {
-		try {
-			const data = await loginUser(email, password)
-			setUserState({ email: data.email })
-		} catch (err) {
-			console.error('Login error:', err)
-			setUserState(null)
-		}
+		const data = await loginUser(email, password)
+		setUserState({ email: data.email })
 	}
 
 	const register = async (email: string, password: string) => {
-		try {
-			const data = await registerUser(email, password)
-			setUserState({ email: data.email })
-		} catch (err) {
-			console.error('Registration error:', err)
-		}
+		const data = await registerUser(email, password)
+		setUserState({ email: data.email })
 	}
 
 	const logout = async () => {
