@@ -14,6 +14,8 @@ interface PDFViewerProps {
 }
 
 export const PDFViewer: React.FC<PDFViewerProps> = ({ meta }) => {
+	const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+
 	const [pdfUrl, setPdfUrl] = useState<string>('')
 	const defaultLayoutPluginInstance = defaultLayoutPlugin()
 
@@ -32,10 +34,10 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ meta }) => {
 				<Worker workerUrl='https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'>
 					<PDFContextMenu />
 					<Viewer
-						theme={{ theme: 'auto' }}
+						theme={{ theme: isDarkMode ? 'dark' : 'light' }}
 						fileUrl={pdfUrl}
 						plugins={[defaultLayoutPluginInstance]}
-                        defaultScale={1.1}
+						defaultScale={1.1}
 					/>
 				</Worker>
 			)}

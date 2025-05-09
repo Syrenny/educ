@@ -4,7 +4,9 @@ import { createStreamChatCompletions, getHistory } from '../../api/api'
 import { useAction } from '../../context/ActionContext'
 import { Action, FileMeta, Message } from '../../types'
 import ChatInput from './ChatInput'
+import { ChatIntroduction } from './ChatIntroduction'
 import ChatMessage from './ChatMessage'
+import { useParams } from 'react-router-dom'
 
 interface ChatProps {
 	file_meta: FileMeta
@@ -47,7 +49,6 @@ const Chat = ({ file_meta }: ChatProps) => {
 
 	useEffect(() => {
 		const targetActions = [Action.Translate, Action.Explain]
-
 		if (targetActions.includes(pdf_action)) {
 			handleSendMessage(pdf_action)
 		}
@@ -122,13 +123,17 @@ const Chat = ({ file_meta }: ChatProps) => {
 			>
 				<div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl xl:pt-10'>
 					<div className='flex h-max flex-col gap-8 pb-52'>
-						{messages.map((msg, index) => (
-							<ChatMessage
-								key={msg.id}
-								message={msg}
-								loading={isLoading}
-							/>
-						))}
+						{messages.length > 0 ? (
+							messages.map((msg, index) => (
+								<ChatMessage
+									key={msg.id}
+									message={msg}
+									loading={isLoading}
+								/>
+							))
+						) : (
+							<ChatIntroduction />
+						)}
 					</div>
 				</div>
 			</div>

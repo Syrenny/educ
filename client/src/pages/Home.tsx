@@ -85,7 +85,9 @@ const Home = () => {
 				</div>
 
 				{files.length === 0 && !uploading ? (
-					<h4 className='text-center text-sm mr-2first:mt-0 mt-4'></h4>
+					<h4 className='text-center text-sm mr-2first:mt-0 mt-4'>
+						Файлы не загружены
+					</h4>
 				) : (
 					<FileList files={files} onDeleteFile={handleDeleteFile} />
 				)}
@@ -131,8 +133,50 @@ const Home = () => {
 				</form>
 			</div>
 
-			<div className='h-screen flex-grow w-full'>
-				{selectedFile && <PDFViewer meta={selectedFile} />}
+			<div className='h-screen flex flex-col flex-grow w-full justify-center'>
+				{selectedFile ? (
+					<PDFViewer meta={selectedFile} />
+				) : (
+					<div className='flex items-center justify-center w-full h-full'>
+						<label className='flex h-full flex-col items-center justify-center w-full border-2 border-gray-300 border-dashed cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600'>
+							<div className='flex flex-col items-center justify-center pt-5 pb-6'>
+								<svg
+									className='w-8 h-8 mb-4 text-gray-500 dark:text-gray-400'
+									aria-hidden='true'
+									xmlns='http://www.w3.org/2000/svg'
+									fill='none'
+									viewBox='0 0 20 16'
+								>
+									<path
+										stroke='currentColor'
+										stroke-linecap='round'
+										stroke-linejoin='round'
+										stroke-width='2'
+										d='M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2'
+									/>
+								</svg>
+								<div className='flex items-center justify-center h-full'>
+									<div className='text-center p-8'>
+										<p className='text-lg text-gray-300 mb-6'>
+											Загрузите PDF-файл, чтобы начать
+											работу с системой.
+										</p>
+										<p className='text-sm text-gray-400 mt-3'>
+											или перетащите его в это окно
+										</p>
+									</div>
+								</div>
+							</div>
+							<input
+								disabled={uploading}
+								className='absolute hidden size-0'
+								type='file'
+								onChange={handleFileUpload}
+								accept='.pdf'
+							/>
+						</label>
+					</div>
+				)}
 			</div>
 
 			<div className='w-full lg:max-w-[600px] md:max-w-[300px] h-screen '>

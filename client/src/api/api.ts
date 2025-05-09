@@ -1,4 +1,4 @@
-import type { Message } from '../types'
+import type { FileMeta, Message } from '../types'
 import apiClient from '../utils/axios'
 
 const buildApiUrl = (path: string): string => {
@@ -65,7 +65,7 @@ export const deleteFile = async (fileId: string): Promise<boolean> => {
 	return response.data
 }
 
-export const getFiles = async () => {
+export const getFiles = async (): Promise<FileMeta[]> => {
 	const response = await apiClient.get('/api/files')
 	return response.data
 }
