@@ -2,6 +2,7 @@ from datetime import timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.database import (
@@ -25,7 +26,7 @@ router = APIRouter()
 @router.post("/register_user", tags=["Security"], status_code=status.HTTP_201_CREATED)
 async def register_user(
     user: UserModel, response: Response, session: AsyncSession = Depends(get_db)
-) -> None:
+) -> JSONResponse:
     if await get_user_by_email(session, user.email):
         raise HTTPException(
             status_code=400, detail="Пользователь с таким email уже существует"
@@ -54,13 +55,18 @@ async def register_user(
         path="/",
     )
 
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={"email": db_user.email},
+    )
+
 
 @router.post("/login_user")
 async def login_user(
     user: UserModel,
     response: Response,
     session: AsyncSession = Depends(get_db),
-) -> None:
+) -> JSONResponse:
     db_user = await get_user_by_email(session, user.email)
     if not db_user or not verify_password(db_user.password, user.password):
         raise HTTPException(status_code=401, detail="Неправильный email или пароль")
@@ -77,12 +83,27 @@ async def login_user(
         path="/",
     )
 
+    return JSONResponse(
+        status_code=200,
+        content={"email": db_user.email},
+    )
+
 
 @router.get("/me")
 async def me(
     user_id: UUID = Depends(get_user_id), session: AsyncSession = Depends(get_db)
-) -> str:
+) -> JSONResponse:
     db_user = await get_user_by_id(session=session, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return db_user.email
+    return JSONResponse(
+        status_code=200,
+        content={"email": db_user.email},
+    )
+
+
+@router.post("/logout", tags=["Security"])
+async def logout(response: Response) -> JSONResponse:
+    response.delete_cookie(key="access_token", path="/")
+
+    return JSONResponse(status_code=status.HTTP_200_OK)

@@ -8,10 +8,12 @@ import FileList from '../components/FileList'
 import IconPaperClip from '../components/icons/IconPaperClip'
 import { PDFViewer } from '../components/viewer/PdfViewer'
 
+import { useAuth } from '../context/AuthContext'
 import type { FileMeta } from '../types'
 
 const Home = () => {
 	const { file_id } = useParams()
+	const { user, logout } = useAuth()
 	const navigate = useNavigate()
 
 	const [files, setFiles] = useState<FileMeta[]>([])
@@ -63,7 +65,7 @@ const Home = () => {
 	return (
 		<div className='flex'>
 			<ToastContainer position='top-right' autoClose={3000} />
-			<div className='pl-3 pt-3 w-full max-w-[200px] text-gray-700 dark:text-gray-300 select-none'>
+			<div className='pl-3 pt-3 w-full max-w-[230px] text-gray-700 dark:text-gray-300 select-none flex flex-col'>
 				<div className='flex'>
 					<h4 className='mb-1.5 mt-4 pl-0.5 text-2xl first:mt-0'>
 						Файлы
@@ -108,6 +110,24 @@ const Home = () => {
 						</svg>
 					</div>
 				)}
+				<form
+					onSubmit={async event => {
+						event.preventDefault()
+						await logout()
+						navigate('/login')
+					}}
+					className='mt-auto mb-8 group flex items-center gap-1.5 rounded-lg pl-2.5 pr-2 hover:bg-gray-100 dark:hover:bg-gray-700'
+				>
+					<span className='flex h-9 flex-none shrink items-center gap-1.5 truncate pr-2 text-gray-500 dark:text-gray-400'>
+						{user?.email}
+					</span>
+					<button
+						type='submit'
+						className='ml-auto h-6 flex-none items-center gap-1.5 rounded-md border bg-white px-2 text-gray-700 shadow-sm group-hover:flex hover:shadow-none dark:border-gray-600 dark:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300 md:hidden'
+					>
+						Sign Out
+					</button>
+				</form>
 			</div>
 
 			<div className='h-screen flex-grow w-full'>

@@ -33,9 +33,13 @@ export const registerUser = async (email: string, password: string) => {
 	return response.data
 }
 
-export const fetchCurrentUser = async (): Promise<any> => {
+export const fetchCurrentUser = async () => {
 	const response = await apiClient.get('/api/me')
 	return response.data
+}
+
+export const deleteCookie = async () => {
+	await apiClient.post('/api/logout')
 }
 
 export const uploadFile = async (files: File[]) => {

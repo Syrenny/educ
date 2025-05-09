@@ -5,15 +5,20 @@ import {
 	useEffect,
 	useState,
 } from 'react'
-import { loginUser, registerUser } from '../api/api'
-import { getUser, removeUser, setUser } from '../utils/auth'
+import {
+	deleteCookie,
+	fetchCurrentUser,
+	loginUser,
+	registerUser,
+} from '../api/api'
 
 interface User {
 	email: string
 }
 
 interface AuthContextType {
-	user: User | null | undefined
+	user: User | null
+	loading: boolean
 	login: (email: string, password: string) => Promise<void>
 	register: (email: string, password: string) => Promise<void>
 	logout: () => void
@@ -22,22 +27,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-	const [user, setUserState] = useState<User | null | undefined>(undefined)
+	const [user, setUserState] = useState<User | null>(null)
+	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
 		const init = async () => {
-			const localUser = getUser()
-			if (localUser) {
-				try {
-					setUserState(localUser)
-				} catch (error) {
-					console.error(
-						'Invalid token or failed to fetch user:',
-						error
-					)
-					removeUser()
-					setUserState(null)
-				}
+			try {
+				const data = await fetchCurrentUser()
+				setUserState({ email: data.email })
+			} catch (error) {
+				console.error('Invalid token or failed to fetch user:', error)
+			} finally {
+				setLoading(false)
 			}
 		}
 		init()
@@ -46,8 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const login = async (email: string, password: string) => {
 		try {
 			const data = await loginUser(email, password)
-			setUser(email)
-			setUserState(user)
+			setUserState({ email: data.email })
 		} catch (err) {
 			console.error('Login error:', err)
 			throw err
@@ -57,21 +57,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const register = async (email: string, password: string) => {
 		try {
 			const data = await registerUser(email, password)
-			setUser(email)
-			setUserState(user)
+			setUserState({ email: data.email })
 		} catch (err) {
 			console.error('Registration error:', err)
 			throw err
 		}
 	}
 
-	const logout = () => {
-		setUserState(null)
-		removeUser()
+	const logout = async () => {
+		try {
+			await deleteCookie()
+			setUserState(null)
+		} catch (err) {
+			console.error('Error while logout:', err)
+		}
 	}
 
 	return (
-		<AuthContext.Provider value={{ user, login, register, logout }}>
+		<AuthContext.Provider
+			value={{ user, loading, login, register, logout }}
+		>
 			{children}
 		</AuthContext.Provider>
 	)
