@@ -100,7 +100,7 @@ async def get_user_by_email(session: AsyncSession, email: str) -> DBUser | None:
 
 async def get_user_by_id(session: AsyncSession, user_id: UUID) -> DBUser | None:
     result = await session.execute(select(DBUser).filter(DBUser.id == user_id))
-    return result.scalars().first()
+    return result.scalar_one_or_none()
 
 
 async def create_token(session: AsyncSession, user_id: UUID, token: str) -> DBToken:
