@@ -29,6 +29,7 @@ services:
             - postgres
         volumes:
             - ~/.cache/huggingface:/root/.cache/huggingface
+            - file-storage:/var/lib/file-storage
         command: uvicorn server.main:app --host 0.0.0.0 --port 8000
 
     client:
@@ -105,6 +106,7 @@ services:
 volumes:
     educ-data:
     init-database:
+    file-storage:
 
 networks:
     postgres:

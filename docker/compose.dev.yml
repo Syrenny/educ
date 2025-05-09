@@ -20,6 +20,7 @@ services:
             - ~/.cache/huggingface:/root/.cache/huggingface
             - ../server:/workspace/server
             - ../.env/:/workspace/.env
+            - file-storage:/var/lib/file-storage
         develop:
             watch:
                 - action: sync
@@ -96,6 +97,7 @@ services:
 volumes:
     educ-data:
     init-database:
+    file-storage:
 
 networks:
     postgres:

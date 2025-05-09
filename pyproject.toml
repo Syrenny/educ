@@ -29,6 +29,7 @@ dependencies = [
     "pytest-asyncio>=0.26.0",
     "python-dotenv>=1.0.1",
     "python-multipart>=0.0.20",
+    "setuptools>=78.1.0",
     "smolagents>=1.9.2",
     "sqlalchemy[asyncio]>=2.0.38",
     "testcontainers>=4.10.0",

@@ -31,7 +31,9 @@ def get_langchain_llm() -> LLM:
 def get_langchain_embeddings() -> LangchainEmbeddings:
     # Configure the embeddings model and cache
     underlying_embeddings = HuggingFaceEmbeddings(
-        model_name=config.embeddings_model_name, encode_kwargs={"batch_size": 10}
+        model_name=config.embeddings_model_name,
+        model_kwargs={"trust_remote_code": True},
+        encode_kwargs={"batch_size": 10},
     )
 
     store = LocalFileStore(config.embeddings_cache_path)
