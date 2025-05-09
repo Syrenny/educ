@@ -48,6 +48,7 @@ jobs:
 
             - name: Build and run containers
               run: |
+                touch ./docker/.env
                 echo "LLM_API_KEY=${{ secrets.LLM_API_KEY }}" >> ./docker/.env
                 echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> ./docker/.env
                 echo "DEFAULT_ADMIN_EMAIL=${{ secrets.DEFAULT_ADMIN_EMAIL }}" >> ./docker/.env
