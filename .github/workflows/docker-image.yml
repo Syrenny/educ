@@ -47,14 +47,14 @@ jobs:
               run: docker compose -f ./docker/compose.prod.yml down
 
             - name: Build and run
-              env:
-                  LLM_API_KEY: ${{secrets.LLM_API_KEY}}
-                  JWT_SECRET_KEY: ${{secrets.JWT_SECRET_KEY}}
-                  DEFAULT_ADMIN_EMAIL: ${{secrets.DEFAULT_ADMIN_EMAIL}}
-                  DEFAULT_ADMIN_PASSWORD: ${{secrets.DEFAULT_ADMIN_PASSWORD}}
-                  SIGN_SECRET_KEY: ${{secrets.SIGN_SECRET_KEY}}
-                  POSTGRES_DB: ${{secrets.POSTGRES_DB}}
-                  POSTGRES_USER: ${{secrets.POSTGRES_USER}}
-                  POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}
-              run: docker compose -f ./docker/compose.prod.yml up -d --build
+              run: |
+                export LLM_API_KEY=${{ secrets.LLM_API_KEY }}
+                export JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+                export DEFAULT_ADMIN_EMAIL=${{ secrets.DEFAULT_ADMIN_EMAIL }}
+                export DEFAULT_ADMIN_PASSWORD=${{ secrets.DEFAULT_ADMIN_PASSWORD }}
+                export SIGN_SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }}
+                export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+                export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+                docker compose -f ./docker/compose.prod.yml up -d --build
 
