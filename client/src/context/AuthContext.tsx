@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			setUserState({ email: data.email })
 		} catch (err) {
 			console.error('Login error:', err)
-			throw err
+			setUserState(null)
 		}
 	}
 
@@ -60,14 +60,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			setUserState({ email: data.email })
 		} catch (err) {
 			console.error('Registration error:', err)
-			throw err
 		}
 	}
 
 	const logout = async () => {
 		try {
 			await deleteCookie()
-			setUserState(null)
 		} catch (err) {
 			console.error('Error while logout:', err)
 		}

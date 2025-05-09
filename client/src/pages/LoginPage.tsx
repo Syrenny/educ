@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {
-	const { login } = useAuth()
+	const { login, user, loading } = useAuth()
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [error, setError] = useState<string | null>(null)
@@ -18,6 +18,7 @@ const LoginPage = () => {
 		if (email.length > 0 && password.length > 0) {
 			try {
 				await login(email, password)
+				console.log(loading, user)
 				navigate(from, { replace: true })
 			} catch (err: any) {
 				console.error(err)
@@ -92,8 +93,8 @@ const LoginPage = () => {
 				</form>
 				<div className='mt-4'>
 					<button
-						onClick={(event) => {
-                            event.preventDefault()
+						onClick={event => {
+							event.preventDefault()
 							navigate('/register')
 						}}
 						className='flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'

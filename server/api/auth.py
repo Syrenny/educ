@@ -25,7 +25,7 @@ router = APIRouter()
 
 @router.post("/register_user", tags=["Security"], status_code=status.HTTP_201_CREATED)
 async def register_user(
-    user: UserModel, response: Response, session: AsyncSession = Depends(get_db)
+    user: UserModel, session: AsyncSession = Depends(get_db)
 ) -> JSONResponse:
     if await get_user_by_email(session, user.email):
         raise HTTPException(
@@ -45,6 +45,10 @@ async def register_user(
     await create_token(session, db_user.id, token)
 
     await session.commit()
+    response = JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={"email": db_user.email},
+    )
     response.set_cookie(
         key="access_token",
         value=token,
@@ -55,16 +59,12 @@ async def register_user(
         path="/",
     )
 
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={"email": db_user.email},
-    )
+    return response
 
 
 @router.post("/login_user")
 async def login_user(
     user: UserModel,
-    response: Response,
     session: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     db_user = await get_user_by_email(session, user.email)
@@ -73,6 +73,10 @@ async def login_user(
 
     token = generate_access_token(db_user)
     await create_token(session, db_user.id, token)
+    response = JSONResponse(
+        status_code=200,
+        content={"email": db_user.email},
+    )
     response.set_cookie(
         key="access_token",
         value=token,
@@ -83,10 +87,7 @@ async def login_user(
         path="/",
     )
 
-    return JSONResponse(
-        status_code=200,
-        content={"email": db_user.email},
-    )
+    return response
 
 
 @router.get("/me")
@@ -102,8 +103,6 @@ async def me(
     )
 
 
-@router.post("/logout", tags=["Security"])
+@router.post("/logout", tags=["Security"], status_code=200)
 async def logout(response: Response) -> JSONResponse:
     response.delete_cookie(key="access_token", path="/")
-
-    return JSONResponse(status_code=status.HTTP_200_OK)
