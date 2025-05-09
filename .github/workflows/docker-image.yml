@@ -58,4 +58,6 @@ jobs:
                 echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
             
             - name: Build and run containers
-              run: docker compose -f ./docker/compose.prod.yml --env-file .env up -d --build
+              run: |
+                cat .env
+                docker compose -f ./docker/compose.prod.yml --env-file .env up -d --build
