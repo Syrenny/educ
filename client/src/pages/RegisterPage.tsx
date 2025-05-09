@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
 import { useAuth } from '../context/AuthContext'
 
 const RegisterPage = () => {
@@ -28,6 +29,7 @@ const RegisterPage = () => {
 
 	return (
 		<div className='flex min-h-full flex-col justify-center px-6 py-12 lg:px-8 dark:bg-gray-700 h-screen text-gray-300'>
+			<ToastContainer position='top-right' autoClose={3000} />
 			<div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
 				<h4 className='mb-5 text-2xl first:mt-0'>Регистрация</h4>
 				<form className='space-y-6' onSubmit={handleRegister}>

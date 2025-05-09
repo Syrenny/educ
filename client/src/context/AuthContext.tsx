@@ -11,6 +11,7 @@ import {
 	loginUser,
 	registerUser,
 } from '../api/api'
+import { useLocation } from 'react-router-dom'
 
 interface User {
 	email: string
@@ -29,8 +30,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const [user, setUserState] = useState<User | null>(null)
 	const [loading, setLoading] = useState(true)
+    const location = useLocation()
 
 	useEffect(() => {
+		const skipPaths = ['/login', '/register']
+		if (skipPaths.includes(location.pathname)) {
+			setLoading(false)
+			return
+		}
+
 		const init = async () => {
 			try {
 				const data = await fetchCurrentUser()
@@ -43,16 +51,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			}
 		}
 		init()
-	}, [])
+	}, [location.pathname])
 
 	const login = async (email: string, password: string) => {
 		const data = await loginUser(email, password)
 		setUserState({ email: data.email })
+        setLoading(false)
 	}
 
 	const register = async (email: string, password: string) => {
 		const data = await registerUser(email, password)
 		setUserState({ email: data.email })
+        setLoading(false)
 	}
 
 	const logout = async () => {

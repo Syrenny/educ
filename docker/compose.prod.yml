@@ -7,6 +7,12 @@ services:
         runtime: nvidia
         ports:
             - 7256:8000
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:8000/api']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
         environment:
             - NVIDIA_VISIBLE_DEVICE=all
             - NVIDIA_DRIVER_CAPABILITIES=all
@@ -34,7 +40,8 @@ services:
         networks:
             - postgres
         depends_on:
-            - server
+            server:
+                condition: service_healthy
         restart: always
 
     postgres:

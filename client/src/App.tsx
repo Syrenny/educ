@@ -10,9 +10,9 @@ import RegisterPage from './pages/RegisterPage'
 const App = () => {
 	return (
 		<React.StrictMode>
-			<AuthProvider>
-				<ActionContextProvider>
-					<Router>
+			<Router>
+				<AuthProvider>
+					<ActionContextProvider>
 						<Routes>
 							<Route
 								path='/register'
@@ -24,9 +24,9 @@ const App = () => {
 								<Route path='/c/:file_id' element={<Home />} />
 							</Route>
 						</Routes>
-					</Router>
-				</ActionContextProvider>
-			</AuthProvider>
+					</ActionContextProvider>
+				</AuthProvider>
+			</Router>
 		</React.StrictMode>
 	)
 }

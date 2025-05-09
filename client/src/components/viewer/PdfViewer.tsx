@@ -27,7 +27,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ meta }) => {
 	}, [meta])
 
 	return (
-		<div className='h-full w-full'>
+		<div className='h-full w-full '>
 			{pdfUrl && (
 				<Worker workerUrl='https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'>
 					<PDFContextMenu />

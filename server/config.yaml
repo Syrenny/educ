@@ -1,13 +1,13 @@
 # DEBUG/TEST/PROD
-env: "PROD"
+env: 'PROD'
 
 # Cache store for embeddings
-embeddings_model_name: "deepvk/USER-bge-m3"
-embeddings_cache_path: "./benchmark/data/cache/embeddings"
+embeddings_model_name: 'Alibaba-NLP/gte-multilingual-base'
+embeddings_cache_path: './benchmark/data/cache/embeddings'
 
 # LLM API configuration
-llm_model_name: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
-llm_api_base: "https://api.together.xyz/v1"
+llm_model_name: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free'
+llm_api_base: 'https://api.together.xyz/v1'
 
 # Rate limiter for LLM API
 llm_requests_per_second: 1
@@ -15,10 +15,10 @@ llm_check_every_n_seconds: 1
 llm_max_bucket_size: 1
 
 # JWT for protected routes
-jwt_algorithm: "HS256"
+jwt_algorithm: 'HS256'
 jwt_token_expires_minutes: 3000
 
 # Local file storage settings
-file_storage_path: "./storage/users-file-storage"
+file_storage_path: './storage/users-file-storage'
 max_files_per_user: 10
 max_file_size: 15

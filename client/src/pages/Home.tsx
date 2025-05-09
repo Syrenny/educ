@@ -38,7 +38,8 @@ const Home = () => {
 			const files = Array.from(event.target.files)
 			setUploading(true)
 			try {
-				const uploadedFile = await uploadFile(files)
+				const uploadedFiles = await uploadFile(files)
+				navigate(`/c/${uploadedFiles[0].file_id}`)
 			} catch (error) {
 				console.error('Error uploading file:', error)
 			} finally {

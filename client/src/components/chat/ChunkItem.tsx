@@ -19,16 +19,21 @@ const ChunkItem: React.FC<ChunkItemProps> = ({ chunks }) => {
 					onClose={() => setShowModal(false)}
 				>
 					<div className='relative flex h-full w-full flex-col gap-4 p-4'>
-						<h3 className='-mb-4 pb-2 text-xl font-bold'>
+						<h3 className='mb-3 pb-2 text-xl font-bold'>
 							Найденные фрагменты
 						</h3>
 						{chunks.map((chunk, index) => (
-							<pre
-								key={index}
-								className='w-full whitespace-pre-wrap break-words rounded-lg border border-gray-200 p-3 text-sm font-mono'
-							>
-								{chunk}
-							</pre>
+							<div key={index}>
+								<pre
+									key={index}
+									className='w-full whitespace-pre-wrap break-words p-3 text-sm font-mono'
+								>
+									{chunk}
+								</pre>
+								{index < chunks.length - 1 && (
+									<hr className='my-4 border-t border-gray-500' />
+								)}
+							</div>
 						))}
 					</div>
 				</Modal>

@@ -112,7 +112,13 @@ const Chat = ({ file_meta }: ChatProps) => {
 		<div className='relative min-h-0 min-w-0 h-full'>
 			<div
 				ref={chatContainerRef}
-				className='scrollbar-custom h-full overflow-y-auto'
+				className='h-full overflow-y-auto [&::-webkit-scrollbar]:w-2
+  [&::-webkit-scrollbar-track]:rounded-full
+  [&::-webkit-scrollbar-track]:bg-transparent
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-gray-500
+  dark:[&::-webkit-scrollbar-track]:bg-transparent
+  dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500'
 			>
 				<div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl xl:pt-10'>
 					<div className='flex h-max flex-col gap-8 pb-52'>
