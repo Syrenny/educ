@@ -148,37 +148,6 @@ async def delete_file(
 
 
 @router.get(
-    "/files/{file_id}",
-    tags=["Files"],
-    summary="Download a file",
-)
-async def download_file(
-    file_id: UUID,
-    user_id: UUID = Depends(get_user_id),
-    session: AsyncSession = Depends(get_db),
-) -> StreamingResponse:
-    """Return the file contents."""
-    db_file = await find_file_meta(session, user_id, file_id)
-    if db_file is None:
-        raise FileNotFoundException()
-
-    file_model = await storage.read(
-        user_id, FileMeta(file_id=file_id, filename=db_file.filename, is_indexed=...)
-    )
-
-    if file_model is None:
-        raise FileNotFoundException()
-
-    return StreamingResponse(
-        iter([file_model.file]),
-        media_type="application/octet-stream",
-        headers={
-            "Content-Disposition": safe_content_disposition(filename=db_file.filename)
-        },
-    )
-
-
-@router.get(
     "/files/{file_id}/signed-url",
     tags=["Files"],
     summary="Generate temporary link",

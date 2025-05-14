@@ -55,7 +55,7 @@ async def register_user(
         httponly=True,
         secure=False,
         samesite="Lax",
-        max_age=timedelta(days=7),
+        max_age=int(timedelta(days=7).total_seconds()),
         path="/",
     )
 
@@ -83,7 +83,7 @@ async def login_user(
         httponly=True,
         secure=False,
         samesite="Lax",
-        max_age=timedelta(days=7),
+        max_age=int(timedelta(days=7).total_seconds()),
         path="/",
     )
 

@@ -1,4 +1,5 @@
 import shutil
+from http.cookies import SimpleCookie
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -15,7 +16,7 @@ def valid_pdf() -> bytes:
 
 
 @pytest.fixture
-async def client(db_session):
+async def _client(db_session):
     session, _ = db_session
 
     async def override_get_db():
@@ -38,32 +39,22 @@ async def client(db_session):
 
 
 @pytest.fixture
-async def headers(client):
+async def client(_client):
     user_data = {
         "email": secrets.default_admin_email.get_secret_value(),
         "password": secrets.default_admin_password.get_secret_value(),
     }
-    response = await client.post("/login_user", json=user_data)
-    response_data = response.json()
+    response = await _client.post("/api/login_user", json=user_data)
 
-    return {
-        "Authorization": f"Bearer {response_data['token']}",
-        "Content-Type": "application/json",
-    }
+    # Извлекаем Set-Cookie из headers
+    set_cookie_header = response.headers.get("set-cookie")
+    cookie = SimpleCookie()
+    cookie.load(set_cookie_header)
 
+    access_token = cookie["access_token"].value
+    _client.cookies.set("access_token", access_token)
 
-@pytest.fixture
-async def upload_files_headers(client):
-    user_data = {
-        "email": secrets.default_admin_email.get_secret_value(),
-        "password": secrets.default_admin_password.get_secret_value(),
-    }
-    response = await client.post("/login_user", json=user_data)
-    response_data = response.json()
-
-    return {
-        "Authorization": f"Bearer {response_data['token']}",
-    }
+    return _client
 
 
 @pytest.fixture(scope="function", autouse=True)

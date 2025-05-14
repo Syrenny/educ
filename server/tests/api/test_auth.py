@@ -3,8 +3,9 @@ import pytest
 from server.config import secrets
 from server.database import get_user_by_email
 
-
 # === Test Register ===
+
+
 @pytest.mark.asyncio
 async def test_register_user(client):
     user_data = {
@@ -12,9 +13,9 @@ async def test_register_user(client):
         "password": secrets.default_admin_password.get_secret_value(),
     }
 
-    response = await client.post("/register_user", json=user_data)
+    response = await client.post("/api/register_user", json=user_data)
     assert response.status_code == 201
-    assert "token" in response.json()
+    assert "access_token" in response.headers.get("set-cookie")
 
 
 @pytest.mark.asyncio
@@ -23,9 +24,9 @@ async def test_register_user_existing_email(client):
         "email": secrets.default_admin_email.get_secret_value(),
         "password": secrets.default_admin_password.get_secret_value(),
     }
-    await client.post("/register_user", json=user_data)
+    await client.post("/api/register_user", json=user_data)
 
-    response = await client.post("/register_user", json=user_data)
+    response = await client.post("/api/register_user", json=user_data)
 
     assert response.status_code == 400
     assert response.json() == {"detail": "Пользователь с таким email уже существует"}
@@ -38,7 +39,7 @@ async def test_register_user_invalid_email(client):
         "password": secrets.default_admin_password.get_secret_value(),
     }
 
-    response = await client.post("/register_user", json=user_data)
+    response = await client.post("/api/register_user", json=user_data)
 
     assert response.status_code == 422
 
@@ -47,14 +48,14 @@ async def test_register_user_invalid_email(client):
 async def test_register_user_missing_password(client):
     user_data = {"email": "test_register_user_missing_password@email.ru"}
 
-    response = await client.post("/register_user", json=user_data)
+    response = await client.post("/api/register_user", json=user_data)
 
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
 async def test_register_user_empty_request(client):
-    response = await client.post("/register_user", json={})
+    response = await client.post("/api/register_user", json={})
 
     assert response.status_code == 422
 
@@ -68,12 +69,13 @@ async def test_login_user_success(client):
         "email": secrets.default_admin_email.get_secret_value(),
         "password": secrets.default_admin_password.get_secret_value(),
     }
-    await client.post("/register_user", json=user_data)
+    await client.post("/api/register_user", json=user_data)
 
-    response = await client.post("/login_user", json=user_data)
+    response = await client.post("/api/login_user", json=user_data)
 
     assert response.status_code == 200
-    assert "token" in response.json()
+
+    assert "access_token" in response.headers.get("set-cookie")
 
 
 @pytest.mark.asyncio
@@ -82,13 +84,13 @@ async def test_login_user_invalid_email(client):
         "email": secrets.default_admin_email.get_secret_value(),
         "password": secrets.default_admin_password.get_secret_value(),
     }
-    await client.post("/register_user", json=user_data)
+    await client.post("/api/register_user", json=user_data)
 
     invalid_user_data = {
         "email": "wronguser@example.com",
         "password": secrets.default_admin_password.get_secret_value(),
     }
-    response = await client.post("/login_user", json=invalid_user_data)
+    response = await client.post("/api/login_user", json=invalid_user_data)
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Неправильный email или пароль"}
@@ -100,13 +102,13 @@ async def test_login_user_invalid_password(client):
         "email": secrets.default_admin_email.get_secret_value(),
         "password": secrets.default_admin_password.get_secret_value(),
     }
-    await client.post("/register_user", json=user_data)
+    await client.post("/api/register_user", json=user_data)
 
     invalid_user_data = {
         "email": secrets.default_admin_email.get_secret_value(),
         "password": "wrongpassword",
     }
-    response = await client.post("/login_user", json=invalid_user_data)
+    response = await client.post("/api/login_user", json=invalid_user_data)
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Неправильный email или пароль"}
@@ -129,8 +131,8 @@ async def test_password_hashing(db_session):
 
 @pytest.mark.asyncio
 async def test_access_with_invalid_token(client):
-    response = await client.post(
-        "/v1/chat/completions", headers={"Authorization": "Bearer invalid_token"}
+    response = await client.get(
+        "/api/v1/chat/completions", cookies={"access_token": "invalid_token"}
     )
 
     assert response.status_code == 401

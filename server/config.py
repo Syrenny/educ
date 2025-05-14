@@ -73,9 +73,19 @@ class Config(BaseModel):
 
 def load_config() -> Config:
     with open("./server/config.yaml") as f:
-        data = yaml.safe_load(f)
-    data["env"] = EnvMode(data["env"])
-    return Config(**data)
+        raw = yaml.safe_load(f)
+
+    env = EnvMode(raw["env"])
+
+    def resolve_env_value(val):
+        if isinstance(val, dict) and env.value in val:
+            return val[env.value]
+        return val
+
+    resolved = {k: resolve_env_value(v) for k, v in raw.items()}
+    resolved["env"] = env
+
+    return Config(**resolved)
 
 
 config = load_config()
