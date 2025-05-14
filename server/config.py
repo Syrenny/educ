@@ -73,6 +73,9 @@ class Config(BaseModel):
     max_files_per_user: int
     max_file_size: int
 
+    # Grobid connection
+    grobid_base: str
+
 
 def load_config() -> Config:
     with open("./server/config.yaml") as f:

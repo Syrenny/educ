@@ -32,7 +32,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "ragas>=0.2.15",
     "setuptools>=78.1.0",
-    "smolagents>=1.9.2",
+    "smolagents==1.15.0",
     "sqlalchemy[asyncio]>=2.0.38",
     "testcontainers>=4.10.0",
     "torch>=2.6.0",

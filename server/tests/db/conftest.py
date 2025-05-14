@@ -19,5 +19,5 @@ async def test_chunks_session(db_session):
 
     yield session, user_id, file_meta
 
-    session.rollback()
-    session.close()
+    await session.rollback()
+    await session.close()

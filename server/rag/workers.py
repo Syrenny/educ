@@ -9,7 +9,7 @@ from server.models import Action, FileMeta
 
 from .core.generation import Generator
 from .core.indexing import SemanticChunker
-from .utils.pdf import read_pdf
+from .pdf import read_pdf
 
 
 async def index_document(user_id: UUID, file: bytes, meta: FileMeta) -> None:

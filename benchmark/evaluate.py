@@ -79,11 +79,9 @@ def evaluate(
         embeddings=LangchainEmbeddingsWrapper(eval_embedder),
         raise_exceptions=True,
     )
-    result.upload()
     result.to_pandas().to_csv(f"./benchmark/results/{config.name}.csv")
     typer.echo(result)
 
 
 if __name__ == "__main__":
-    app()
     app()
