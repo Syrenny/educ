@@ -6,12 +6,11 @@ embeddings_model_name: 'deepvk/USER-bge-m3'
 embeddings_cache_path: './benchmark/data/cache/embeddings'
 
 # LLM API configuration
-llm_model_name: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free'
-llm_api_base: 'https://api.together.xyz/v1'
+llm_model_name: 'openai/gpt-4o-mini'
+llm_api_base: 'https://api.vsegpt.ru/v1'
 
 # LLM cache settings
-enable_llm_cache
-llm_cache_path: './cache/llm'
+enable_llm_cache: true
 
 # Rate limiter for LLM API
 llm_requests_per_second: 1

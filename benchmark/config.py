@@ -12,7 +12,7 @@ class ConfigType(str, Enum):
 
 class BenchmarkConfig(BaseModel):
     # LLM API configuration
-    eval_llm_model_name: str = "google/gemini-2.5-pro-preview"
+    eval_llm_model_name: str = "google/gemini-2.5-flash-pre"
 
     results_path: Path = Path("./benchmark/results")
 
