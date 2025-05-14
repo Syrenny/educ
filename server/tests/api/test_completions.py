@@ -5,10 +5,10 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_chat_completions(client, headers, valid_pdf, upload_files_headers):
+async def test_chat_completions(client, valid_pdf):
     # Шаг 1: Загружаем файл
     files = [("files", ("test.pdf", valid_pdf, "application/pdf"))]
-    response = await client.post("/files", files=files, headers=upload_files_headers)
+    response = await client.post("/api/files", files=files)
 
     filename = response.json()[0]["filename"]
     file_id = response.json()[0]["file_id"]
@@ -21,7 +21,7 @@ async def test_chat_completions(client, headers, valid_pdf, upload_files_headers
     max_retries = 30
     retries = 0
     while not indexing_done and retries < max_retries:
-        status_response = await client.get(f"/files/{file_id}/status", headers=headers)
+        status_response = await client.get(f"/api/files/{file_id}/status")
         if status_response.status_code == 200:
             indexing_done = status_response.json()
 
@@ -34,21 +34,19 @@ async def test_chat_completions(client, headers, valid_pdf, upload_files_headers
 
     # Шаг 3: Запрашиваем stream_id для чата
     request_data = {
+        "file_id": file_id,
         "messages": [
             {
                 "role": "user",
                 "content": "Декоратор field_validator всегда принимает один обязательный аргумент - название поля, которое необходимо валидировать. Второй аргумент, который предпочтительно указывать, mode.",
             }
         ],
-        "documents": [{"filename": filename, "file_id": file_id}],
         "snippet": "",
         "action": "default",
     }
 
     # Подготавливаем поток
-    prepare_response = await client.post(
-        "/api/prepare_stream", json=request_data, headers=headers
-    )
+    prepare_response = await client.post("/api/prepare_stream", json=request_data)
     stream_id = prepare_response.json()
 
     assert prepare_response.status_code == 200
@@ -57,7 +55,6 @@ async def test_chat_completions(client, headers, valid_pdf, upload_files_headers
     completion_params = {
         "method": "GET",
         "url": f"/api/v1/chat/completions?stream_id={stream_id}",
-        "headers": headers,
     }
 
     response_text = ""
@@ -71,11 +68,8 @@ async def test_chat_completions(client, headers, valid_pdf, upload_files_headers
                     found_done = True
                 else:
                     parsed = json.loads(json_part)
-                    assert "choices" in parsed
-                    assert len(parsed["choices"]) > 0
-                    assert "delta" in parsed["choices"][0]
-                    assert "content" in parsed["choices"][0]["delta"]
-                    response_text += parsed["choices"][0]["delta"]["content"]
+                    assert len(parsed) > 0
+                    response_text += " ".join(parsed)
 
     assert found_done, "Streaming response did not include [DONE] marker"
     assert response_text.strip(), "Response text is empty"
