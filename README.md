@@ -3,7 +3,7 @@
 
 # Educ Chat
 
-**Educ Chat** — это прототип интерактивного учебного пособия на базе Retrieval Augmented Generation. Пользователь может загружать PDF-документы, задавать вопросы и получать ответы с указанием релевантных фрагментов текста.
+**[Educ Chat](https://github.com/Syrenny/educ)** — это прототип интерактивного учебного пособия на базе Retrieval Augmented Generation. Пользователь может загружать PDF-документы, задавать вопросы и получать ответы с указанием релевантных фрагментов текста.
 
 ---
 
@@ -45,3 +45,32 @@ docker compose -f compose.prod.yml up -d
 pytest
 ```
 
+### Бенчмарк
+
+Стоит отметить, что для запуска бенчмарка и конфигурации AgenticRAG понадобится подключиться большую языковую модель, поддерживающую инструменты.
+
+0. Подготовка окружения:
+
+```bash
+sudo apt install pipx
+pipx install uv
+uv sync
+```
+
+1. Запуск подготовки датасета:
+
+```bash
+uv run -m benchmark.dataset
+```
+
+После успешного выполнения в терминале будет оставлено сообщение вида:
+
+Dataset checkpoint created at: benchmark/data/transformed/datasets/FRAMES_2025-05-14_12-05-09_Lzi3Ny
+
+На следующем этапе необходимо подставить путь из этого сообщения
+
+2. Запуск бенчмарка:
+
+```bash
+uv run -m benchmark.evaluate --config < system / agentic / llm > --checkpoint <путь до директории с датасетом>
+```

@@ -56,6 +56,10 @@ class Config(BaseModel):
     llm_model_name: str
     llm_api_base: str
 
+    # LLM cache settings
+    enable_llm_cache: bool
+    llm_cache_path: Path
+
     # Rate limiter for LLM API
     llm_requests_per_second: int
     llm_check_every_n_seconds: int

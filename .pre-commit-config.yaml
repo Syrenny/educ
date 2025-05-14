@@ -15,4 +15,4 @@ repos:
           - id: mypy
             args: [--ignore-missing-imports]
             additional_dependencies:
-                [types-aiofiles>=24.1.0.20250326, types-pyyaml>=6.0.12.20250402]
+                [types-aiofiles>=24.1.0.20250326, types-pyyaml>=6.0.12.20250402, types-requests]

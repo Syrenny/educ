@@ -9,6 +9,10 @@ embeddings_cache_path: './benchmark/data/cache/embeddings'
 llm_model_name: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free'
 llm_api_base: 'https://api.together.xyz/v1'
 
+# LLM cache settings
+enable_llm_cache
+llm_cache_path: './cache/llm'
+
 # Rate limiter for LLM API
 llm_requests_per_second: 1
 llm_check_every_n_seconds: 1
