@@ -14,8 +14,6 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
-            grobid:
-                condition: service_healthy
         networks:
             - postgres
         volumes:
@@ -102,12 +100,6 @@ services:
         ports:
             - '8080:8070'
             - '8081:8071'
-        healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://localhost:8070/api/isalive']
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 10s
         runtime: nvidia
         init: true
         ulimits:

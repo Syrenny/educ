@@ -32,6 +32,6 @@ max_file_size: 15
 
 # Grobid connection
 grobid_base:
-    DEV: 'http://0.0.0.0:8080'
-    TEST: 'http://0.0.0.0:8080'
+    DEV: 'http://localhost:8080'
+    TEST: 'http://localhost:8080'
     PROD: 'http://grobid'

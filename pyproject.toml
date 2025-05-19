@@ -10,6 +10,7 @@ dependencies = [
     "bcrypt>=4.3.0",
     "datasets>=3.6.0",
     "fastapi>=0.115.8",
+    "grobid-client-python>=0.0.9",
     "huggingface-hub>=0.30.2",
     "langchain>=0.3.19",
     "langchain-community>=0.3.18",
