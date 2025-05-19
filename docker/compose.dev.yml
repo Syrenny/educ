@@ -94,6 +94,20 @@ services:
         networks:
             - postgres
 
+    grobid:
+        container_name: educ_grobid
+        image: lfoppiano/grobid:0.8.2
+        ports:
+            - '8080:8070'
+            - '8081:8071'
+        runtime: nvidia
+        init: true
+        ulimits:
+            core: 0
+        restart: unless-stopped
+        networks:
+            - postgres
+
 volumes:
     educ-data:
     init-database:

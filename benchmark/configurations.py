@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from smolagents import LogLevel, Tool, ToolCallingAgent
+from tqdm import tqdm
 
 from benchmark.config import ConfigType
 from benchmark.utils import Asphodel
-from server.rag.core.generation import Generator
+from server.rag.core.generation import Action, Generator
 from server.rag.core.indexing import SemanticChunker
 from server.utils.llm import get_langchain_embeddings, get_langchain_llm
 
@@ -44,11 +45,11 @@ class JustLLM(BaseRAG):
 class SystemRAG(BaseRAG):
     def __init__(self, documents):
         super().__init__(documents)
-        self.generator = Generator()
+        self.generator = Generator(action=Action.default, snippet=None)
         chunker = SemanticChunker()
 
         self.chunks = []
-        for document in documents:
+        for document in tqdm(documents, desc="Documents indexation"):
             self.chunks.extend(chunker(document))
         self.embeddings = self.embedder.embed_documents(self.chunks)
 
@@ -116,6 +117,9 @@ class AgenticRAG(BaseRAG):
             description="Agentic RAG is a system, where LLM can decide whether to use retriever or not.",
             verbosity_level=LogLevel.ERROR,
         )
+
+    def retrieve(self, query: str) -> list[str]:
+        return []
 
     def __call__(self, query: str) -> tuple[str, list[str]]:
         context = [""]
